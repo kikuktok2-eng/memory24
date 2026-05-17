@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Loading from "./components/Loading";
-import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,33 +14,12 @@ export default function Home() {
 
   if (loading) return <Loading />;
 
-  // 🔐 CHECK LOGIN BEFORE GO EDIT
-  const handleEditClick = () => {
-    const auth = localStorage.getItem("auth");
-
-    if (auth === "admin") {
-      router.push("/edit");
-    } else {
-      router.push("/login");
-    }
-  };
-
   return (
     <main className="min-h-screen bg-[#070A12] text-white relative overflow-hidden">
 
       {/* BACKGROUND GLOW */}
       <div className="absolute w-[600px] h-[600px] bg-pink-500/10 blur-[180px] top-[-200px] left-[-200px]" />
       <div className="absolute w-[500px] h-[500px] bg-blue-500/10 blur-[160px] bottom-[-200px] right-[-200px]" />
-
-      {/* TOP RIGHT BUTTON (PROTECTED EDIT) */}
-      <div className="fixed top-5 right-5 z-50">
-        <button
-          onClick={handleEditClick}
-          className="px-4 py-2 rounded-full bg-pink-500 hover:bg-pink-600 text-xs shadow-lg transition-all"
-        >
-          Edit Photos ✏️
-        </button>
-      </div>
 
       {/* HERO */}
       <section className="h-screen flex flex-col items-center justify-center text-center px-6">
