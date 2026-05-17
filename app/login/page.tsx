@@ -10,11 +10,15 @@ export default function LoginPage() {
   const [pass, setPass] = useState("");
 
   const login = () => {
-    if (user === "admin" && pass === "123456") {
+    // 🔐 Mengambil data rahasia dari Environment Variables Vercel
+    const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER;
+    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS;
+
+    if (user === adminUser && pass === adminPass) {
       localStorage.setItem("auth", "admin");
       router.push("/");
     } else {
-      alert("Login gagal");
+      alert("Login gagal! Periksa kembali username dan password.");
     }
   };
 
@@ -23,24 +27,25 @@ export default function LoginPage() {
 
       <div className="p-6 rounded-xl bg-white/5 border border-white/10 w-80">
 
-        <h1 className="mb-4">Admin Login</h1>
+        <h1 className="mb-4 font-semibold text-lg text-center">Admin Login ✏️</h1>
 
         <input
           placeholder="Username"
-          className="w-full p-2 mb-2 bg-black/30 border border-white/10 rounded"
+          className="w-full p-2 mb-2 bg-black/30 border border-white/10 rounded focus:outline-none focus:border-pink-500 text-sm transition-all"
           onChange={(e) => setUser(e.target.value)}
         />
 
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-2 mb-4 bg-black/30 border border-white/10 rounded"
+          className="w-full p-2 mb-4 bg-black/30 border border-white/10 rounded focus:outline-none focus:border-pink-500 text-sm transition-all"
           onChange={(e) => setPass(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && login()} // Membantu user agar bisa login hanya dengan tekan Enter
         />
 
         <button
           onClick={login}
-          className="w-full bg-pink-500 py-2 rounded"
+          className="w-full bg-pink-500 hover:bg-pink-600 font-medium py-2 rounded transition-all text-sm shadow-lg shadow-pink-500/10"
         >
           Login
         </button>
