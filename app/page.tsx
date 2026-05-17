@@ -15,8 +15,49 @@ export default function Home() {
   const [myMood, setMyMood] = useState("Vibe: Lagi Kangen Berat");
   const [partnerMood, setPartnerMood] = useState("Vibe: Butuh Deep Talk");
 
+  // ==========================================================
+  // STATE DINAMIS YANG DISINKRONKAN DENGAN EDITOR ADMIN CONTROL
+  // ==========================================================
+  const [customLdr, setCustomLdr] = useState("± 780 Km Antara Kita");
+  const [secretNote, setSecretNote] = useState("Makasih banyak ya udah selalu sabar, chill, dan jadi safe place paling nyaman buat aku. I love you! ❤️");
+  const [homeLatitude, setHomeLatitude] = useState("-6.1751"); 
+  const [homeLongitude, setHomeLongitude] = useState("106.8272");
+  const [homeLabel, setHomeLabel] = useState("Rumah Kesayangan");
+
+  const [clickMissions, setClickMissions] = useState([
+    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
+    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" }
+  ]);
+
+  const [gachaPool, setGachaPool] = useState([
+    ["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"],
+    ["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"]
+  ]);
+
+  const [scratchNotes, setScratchNotes] = useState([
+    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
+    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
+  ]);
+
+  const [quizPool, setQuizPool] = useState([
+    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 }
+  ]);
+
+  const [puzzleSentences, setPuzzleSentences] = useState([
+    ["Kamu", "Adalah", "Semesta", "Paling", "Indah"],
+    ["Mau", "Bareng", "Kamu", "Sampai", "Tua"]
+  ]);
+
+  const [photos, setPhotos] = useState([
+    { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" }
+  ]);
+
+  const [tracks, setTracks] = useState([
+    { title: "Lover", artist: "Taylor Swift", duration: "03:41" }
+  ]);
+
   // ==========================================
-  // STATE GAME DENGAN PERSISTENCE LOCALSTORAGE
+  // STATE PROGRESS GAMEPLAY USER
   // ==========================================
   const [clickStage, setClickStage] = useState(0);
   const [clickCount, setClickCount] = useState(0);
@@ -33,38 +74,9 @@ export default function Home() {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [puzzleWin, setPuzzleWin] = useState(false);
 
-  // Database Game
-  const clickMissions = [
-    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
-    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" },
-    { title: "Semburin Salting Level Max", target: 20, reward: "🔥 Doi Sukses Bikin Salting!", color: "from-amber-500 to-red-500" }
-  ];
-
-  const gachaPool = [
-    ["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"],
-    ["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"],
-    ["💔 Lewat", "✨ Free Deep Talk Semalaman", "💔 Kosong"]
-  ];
-
-  const scratchNotes = [
-    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
-    "Makasih ya udah bertahan sama aku sejauh ini. Proud of you! 💖",
-    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
-  ];
-
-  const quizPool = [
-    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 },
-    { q: "Kalo aku tiba-tiba ngilang, artinya aku lagi...", a: ["Tidur Pulas", "Ngambek Butuh Dibujuk", "Main Game"], c: 1 },
-    { q: "Apa hal kecil dari kamu yang paling bikin aku candu?", a: ["Wanginya", "Ketawa Randomnya", "Pas Lagi Manja"], c: 1 }
-  ];
-
-  const puzzleSentences = [
-    ["Kamu", "Adalah", "Semesta", "Paling", "Indah"],
-    ["Mau", "Bareng", "Kamu", "Sampai", "Tua"],
-    ["Rindu", "Ini", "Curang", "Nambah", "Terus"]
-  ];
-
-  // 1. Load data dari localStorage saat pertama kali buka website
+  // ==========================================
+  // 1. SINKRONISASI DATA DARI LOCAL STORAGE
+  // ==========================================
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
     
@@ -73,7 +85,43 @@ export default function Home() {
     const difference = today.getTime() - startDate.getTime();
     setDaysTogether(Math.floor(difference / (1000 * 60 * 60 * 24)));
 
-    // Ambil history progres game jika ada
+    // Ambil Data Kustom dari Admin Control
+    const savedLdr = localStorage.getItem("our_ldr");
+    const savedNote = localStorage.getItem("our_note");
+    const savedLat = localStorage.getItem("home_lat");
+    const savedLng = localStorage.getItem("home_lng");
+    const savedLabel = localStorage.getItem("home_label");
+
+    if (savedLdr) setCustomLdr(savedLdr);
+    if (savedNote) setSecretNote(savedNote);
+    if (savedLat) setHomeLatitude(savedLat);
+    if (savedLng) setHomeLongitude(savedLng);
+    if (savedLabel) setHomeLabel(savedLabel);
+
+    // Ambil Array Komponen Dinamis
+    if (localStorage.getItem("click_missions")) setClickMissions(JSON.parse(localStorage.getItem("click_missions")!));
+    if (localStorage.getItem("scratch_notes")) setScratchNotes(JSON.parse(localStorage.getItem("scratch_notes")!));
+    if (localStorage.getItem("quiz_pool")) setQuizPool(JSON.parse(localStorage.getItem("quiz_pool")!));
+    if (localStorage.getItem("our_photos")) setPhotos(JSON.parse(localStorage.getItem("our_photos")!));
+    if (localStorage.getItem("our_tracks")) setTracks(JSON.parse(localStorage.getItem("our_tracks")!));
+
+    // Rekonstruksi Struktur Data Gacha (Menggabungkan Tier 1 & Tier 2)
+    const savedGacha0 = localStorage.getItem("gacha_pool_0");
+    const savedGacha1 = localStorage.getItem("gacha_pool_1");
+    if (savedGacha0 && savedGacha1) {
+      setGachaPool([JSON.parse(savedGacha0), JSON.parse(savedGacha1)]);
+    }
+
+    // Rekonstruksi Struktur Data Game Puzzle (String dipisah koma -> Array Kata)
+    const savedPuzzle = localStorage.getItem("puzzle_sentences");
+    let currentPuzzleData = puzzleSentences;
+    if (savedPuzzle) {
+      const rawSentences: string[] = JSON.parse(savedPuzzle);
+      currentPuzzleData = rawSentences.map(sentence => sentence.split(",").map(w => w.trim()));
+      setPuzzleSentences(currentPuzzleData);
+    }
+
+    // Ambil Progres Leveling Pengguna
     const savedClickStage = localStorage.getItem("clickStage");
     const savedQuizStage = localStorage.getItem("quizStage");
     const savedPuzzleStage = localStorage.getItem("puzzleStage");
@@ -84,9 +132,12 @@ export default function Home() {
     if (savedPuzzleStage) {
       const pStage = Number(savedPuzzleStage);
       setPuzzleStage(pStage);
-      initPuzzle(pStage);
+      // Menggunakan data puzzle yang ditarik terbaru agar tidak crash index undefined
+      const targetStage = currentPuzzleData[pStage] ? pStage : 0;
+      setPuzzleStage(targetStage);
+      setShuffledWords([...currentPuzzleData[targetStage]].sort(() => Math.random() - 0.5));
     } else {
-      initPuzzle(0);
+      setShuffledWords([...currentPuzzleData[0]].sort(() => Math.random() - 0.5));
     }
 
     return () => clearTimeout(timer);
@@ -104,21 +155,25 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [activeTrack]);
 
-  // Helper Puzzle
+  // Helper Puzzle Reset/Init
   const initPuzzle = (stageIdx: number) => {
     setSelectedWords([]);
     setPuzzleWin(false);
-    setShuffledWords([...puzzleSentences[stageIdx]].sort(() => Math.random() - 0.5));
+    if (puzzleSentences[stageIdx]) {
+      setShuffledWords([...puzzleSentences[stageIdx]].sort(() => Math.random() - 0.5));
+    }
   };
 
   const handleClicker = () => {
     const currentMission = clickMissions[clickStage];
+    if (!currentMission) return;
+
     if (clickCount + 1 >= currentMission.target) {
       setClickCount(currentMission.target);
       setTimeout(() => {
         const nextStage = (clickStage + 1) % clickMissions.length;
         setClickStage(nextStage);
-        localStorage.setItem("clickStage", String(nextStage)); // Simpan progres
+        localStorage.setItem("clickStage", String(nextStage)); 
         setClickCount(0);
       }, 1000);
     } else {
@@ -127,15 +182,16 @@ export default function Home() {
   };
 
   const playGacha = () => {
+    if (gachaPool.length === 0) return;
     setIsShuffling(true);
     setGachaResult(null);
     setTimeout(() => {
       setIsShuffling(false);
-      const currentPool = gachaPool[gachaStage];
+      const currentPool = gachaPool[gachaStage % gachaPool.length];
       const winResult = currentPool[Math.floor(Math.random() * currentPool.length)];
       setGachaResult(winResult);
       
-      if (!winResult.includes("💔")) {
+      if (winResult && !winResult.includes("💔")) {
         setTimeout(() => {
           setGachaStage((prev) => (prev + 1) % gachaPool.length);
           setGachaResult(null);
@@ -145,14 +201,17 @@ export default function Home() {
   };
 
   const handleQuiz = (idx: number) => {
-    if (idx === quizPool[quizStage].c) {
+    const currentQuiz = quizPool[quizStage];
+    if (!currentQuiz) return;
+
+    if (idx === currentQuiz.c) {
       setQuizFeedback("✨ Bener Banget! Lanjut level berikutnya...");
       setTimeout(() => {
         setQuizFeedback(null);
         if (quizStage + 1 < quizPool.length) {
           const nextQuiz = quizStage + 1;
           setQuizStage(nextQuiz);
-          localStorage.setItem("quizStage", String(nextQuiz)); // Simpan progres
+          localStorage.setItem("quizStage", String(nextQuiz)); 
         } else {
           setQuizFinished(true);
         }
@@ -163,18 +222,23 @@ export default function Home() {
   };
 
   const handleWordClick = (word: string, index: number) => {
+    const currentSentence = puzzleSentences[puzzleStage];
+    if (!currentSentence) return;
+
     const updated = [...selectedWords, word];
     setSelectedWords(updated);
     setShuffledWords(shuffledWords.filter((_, i) => i !== index));
 
-    if (updated.length === puzzleSentences[puzzleStage].length) {
-      if (JSON.stringify(updated) === JSON.stringify(puzzleSentences[puzzleStage])) {
+    if (updated.length === currentSentence.length) {
+      if (JSON.stringify(updated) === JSON.stringify(currentSentence)) {
         setPuzzleWin(true);
         setTimeout(() => {
           const nextStage = (puzzleStage + 1) % puzzleSentences.length;
           setPuzzleStage(nextStage);
-          localStorage.setItem("puzzleStage", String(nextStage)); // Simpan progres
-          initPuzzle(nextStage);
+          localStorage.setItem("puzzleStage", String(nextStage)); 
+          setSelectedWords([]);
+          setPuzzleWin(false);
+          setShuffledWords([...puzzleSentences[nextStage]].sort(() => Math.random() - 0.5));
         }, 1500);
       } else {
         setTimeout(() => {
@@ -204,7 +268,7 @@ export default function Home() {
       <section className="h-screen flex flex-col items-center justify-center text-center px-6 relative z-10">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }} className="space-y-4">
           <span className="text-xs font-bold uppercase tracking-[0.3em] bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Our Tiny Universe // Edisi Skena Arcade Leveling</span>
-          <h1 className="text-5xl md:text-8xl font-extrabold tracking-tighter bg-gradient-to-b from-white via-white/90 to-white/40 bg-clip-text text-transparent drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">Us Against The World.</h1>
+          <h1 className="text-4xl md:text-7xl font-extrabold tracking-tighter bg-gradient-to-b from-white via-white/90 to-white/40 bg-clip-text text-transparent drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">{customLdr}</h1>
           <p className="text-white/40 mt-4 text-sm md:text-base max-w-md mx-auto font-light leading-relaxed">Selesaikan setiap misi buat ngebuka level selanjutnya. Kuis, gacha, dan kata-katanya bakal tersimpan otomatis!</p>
         </motion.div>
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}>
@@ -224,15 +288,15 @@ export default function Home() {
                 <span className="text-pink-400 text-[10px] font-mono uppercase tracking-wider">Misi Ke-0{clickStage + 1}</span>
                 <span className="text-[9px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded font-mono font-bold animate-pulse">LIVE STAGE</span>
               </div>
-              <h3 className="text-sm font-bold mt-1 text-white">{clickMissions[clickStage]?.title}</h3>
+              <h3 className="text-sm font-bold mt-1 text-white">{clickMissions[clickStage]?.title || "Misi Selesai"}</h3>
               <p className="text-[11px] text-white/40 mt-1">Spam klik tombol di bawah sampai target terpenuhi buat klaim *reward*.</p>
             </div>
             <div className="my-2 text-center">
               <span className="text-2xl font-black block text-pink-500 font-mono">
-                {clickCount} / {clickMissions[clickStage]?.target}
+                {clickCount} / {clickMissions[clickStage]?.target || 0}
               </span>
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                <div className={`h-full bg-gradient-to-r ${clickMissions[clickStage]?.color} transition-all duration-150`} style={{ width: `${(clickCount / (clickMissions[clickStage]?.target || 1)) * 100}%` }} />
+                <div className={`h-full bg-gradient-to-r ${clickMissions[clickStage]?.color || "from-pink-500 to-purple-500"} transition-all duration-150`} style={{ width: `${(clickCount / (clickMissions[clickStage]?.target || 1)) * 100}%` }} />
               </div>
             </div>
             <button onClick={handleClicker} className="w-full py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
@@ -274,7 +338,7 @@ export default function Home() {
               <p className="text-[11px] text-white/40 mt-1">Gosok lapisan penutup. Klik ganti kupon setelah dibaca buat dapet teks baru.</p>
             </div>
             <div className="my-2 relative h-14 rounded-lg border border-white/5 overflow-hidden flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[11px] font-mono text-center px-3 text-purple-300">{scratchNotes[scratchStage]}</span>
+              <span className="text-[11px] font-mono text-center px-3 text-purple-300">{scratchNotes[scratchStage] || "Kupon Kosong"}</span>
               {!isScratched && (
                 <div onClick={() => setIsScratched(true)} className="absolute inset-0 bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-white/40 font-mono cursor-pointer transition-colors select-none">
                   ░ KLIK / GOSOK LAPISAN ░
@@ -291,11 +355,11 @@ export default function Home() {
           {/* GAME 4: TRIVIA QUIZ BERTINGKAT */}
           <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
-              <span className="text-amber-400 text-[10px] font-mono uppercase tracking-wider">Kuis Stage 0{quizStage + 1} / 03</span>
+              <span className="text-amber-400 text-[10px] font-mono uppercase tracking-wider">Kuis Stage 0{quizStage + 1} / 0{quizPool.length}</span>
               <h3 className="text-sm font-bold mt-1 text-white">Seberapa Kenal Kamu?</h3>
             </div>
             <div className="my-2 min-h-[90px] flex flex-col justify-center">
-              {!quizFinished ? (
+              {!quizFinished && quizPool[quizStage] ? (
                 <div className="space-y-2">
                   <p className="text-[11px] text-white/80 font-medium leading-tight">{quizPool[quizStage]?.q}</p>
                   {quizFeedback ? (
@@ -364,7 +428,7 @@ export default function Home() {
               <span className="text-white/30 text-[10px] font-mono">SINCE 01/01/2024</span>
             </div>
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-5xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400">{daysTogether} Hari</span>
+              <span className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400">{daysTogether} Hari</span>
               <span className="text-white/40 text-xs">Ga mau nuker kamu sama apa pun di dunia ini.</span>
             </div>
           </Card>
@@ -387,32 +451,30 @@ export default function Home() {
           <Card className="p-5 flex flex-col justify-between min-h-[180px]">
             <span className="text-purple-400 text-[10px] font-mono uppercase tracking-wider">Our Safe Place Hub</span>
             <div className="grid grid-cols-2 gap-2 my-2">
-              <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-pink-400 border border-white/5 transition-colors font-mono">📂 Foto Kita</a>
-              <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-blue-400 border border-white/5 transition-colors font-mono">📝 Wishlist</a>
-              <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-green-400 border border-white/5 transition-colors font-mono">🎵 Playlist</a>
-              <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-amber-400 border border-white/5 transition-colors font-mono">📍 Rumah</a>
+              <button onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.5, behavior: "smooth" })} className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-pink-400 border border-white/5 transition-colors font-mono">📂 Foto Kita</button>
+              <button className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-blue-400 border border-white/5 transition-colors font-mono cursor-not-allowed opacity-50">📝 Wishlist</button>
+              <button onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.7, behavior: "smooth" })} className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-green-400 border border-white/5 transition-colors font-mono">🎵 Playlist</button>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-amber-400 border border-white/5 transition-colors font-mono flex items-center justify-center gap-1">📍 {homeLabel}</a>
             </div>
           </Card>
         </div>
       </Section>
 
-      {/* REPOSITORI VISUAL & AUDIO */}
+      {/* REPOSITORI VISUAL & AUDIO DINAMIS */}
       <Section title="📸 Our Visual Dump & Core Memories">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {[
-            { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" },
-            { url: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=600", desc: "Date Ngopi Random" },
-            { url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600", desc: "Pap Cantik Kamu" },
-            { url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600", desc: "Deep Talk Malam" },
-            { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600", desc: "Liburan Singkat" },
-          ].map((photo, i) => (
+          {photos.map((photo, i) => (
             <Card key={i} className="overflow-hidden bg-white/5 relative group p-1.5">
               <div className="aspect-[4/5] overflow-hidden rounded-xl">
-                <img src={photo.url} alt={photo.desc} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                {photo.url ? (
+                  <img src={photo.url} alt={photo.desc} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full bg-white/5 flex items-center justify-center text-[10px] text-white/20">No Image</div>
+                )}
               </div>
               <div className="p-2 font-mono flex justify-between items-center text-[10px]">
                 <span className="text-white/40">CUTE_0{i+1}</span>
-                <span className="text-white/20 truncate max-w-[70px]">{photo.desc}</span>
+                <span className="text-white/20 truncate max-w-[80px]" title={photo.desc}>{photo.desc || "Tanpa Deskripsi"}</span>
               </div>
             </Card>
           ))}
@@ -421,18 +483,15 @@ export default function Home() {
 
       <Section title="🎵 Lagu Yang Menggambarkan Kamu">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title: "Lover", artist: "Taylor Swift", duration: "03:41" },
-            { title: "About You", artist: "The 1975", duration: "05:26" },
-          ].map((track, i) => (
+          {tracks.map((track, i) => (
             <Card key={i} className={`p-4 flex items-center justify-between group bg-white/[0.02] cursor-pointer ${activeTrack === i ? 'border-pink-500/40 bg-white/[0.04]' : ''}`} onClick={() => setActiveTrack(activeTrack === i ? null : i)}>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-mono text-xs">
                   {activeTrack === i ? "⏸️" : `0${i+1}`}
                 </div>
                 <div>
-                  <h3 className="font-medium text-xs text-white group-hover:text-pink-400 transition-colors">{track.title}</h3>
-                  <p className="text-[11px] text-white/40">{track.artist}</p>
+                  <h3 className="font-medium text-xs text-white group-hover:text-pink-400 transition-colors">{track.title || "Unknown Title"}</h3>
+                  <p className="text-[11px] text-white/40">{track.artist || "Unknown Artist"}</p>
                 </div>
               </div>
               <div className="w-16 h-[2px] bg-white/10 rounded-full overflow-hidden">
@@ -449,7 +508,7 @@ export default function Home() {
           <div>
             <span className="text-[10px] uppercase tracking-widest text-pink-400 font-bold block mb-2">Pesan Rahasia Buat Kamu</span>
             <p className="text-xs font-light text-white/70 leading-relaxed font-mono">
-              {isNoteDecrypted ? "Makasih banyak ya udah selalu sabar, chill, dan jadi safe place paling nyaman buat aku. I love you! ❤️" : "Ada surat cinta dikunci nih. Klik buat baca..."}
+              {isNoteDecrypted ? secretNote : "Ada surat cinta dikunci nih. Klik buat baca..."}
             </p>
           </div>
           <span className="text-[9px] text-white/30 font-mono mt-3 uppercase">{isNoteDecrypted ? "STATUS: UNLOCKED" : "STATUS: LOCKED"}</span>
@@ -478,7 +537,6 @@ export default function Home() {
   );
 }
 
-// Komponen Sub-Section & Card tetap sama seperti kode Anda
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="max-w-5xl mx-auto px-6 py-12">
