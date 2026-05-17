@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Perbaikan: Menggunakan path resmi Next.js
+import { useRouter } from "next/navigation";
 
 export default function EditPage() {
   const router = useRouter();
@@ -23,9 +23,9 @@ export default function EditPage() {
     { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" }
   ]);
 
-  // 3. Game 2: Pilihan Gacha (Tier 1 & Tier 2)
-  const [gachaPool0, setGachaPool0] = useState(["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"]);
-  const [gachaPool1, setGachaPool1] = useState(["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"]);
+  // 3. Game 2: Pilihan Gacha (Menggunakan string agar input lancar diketik)
+  const [gachaPool0Input, setGachaPool0Input] = useState("💔 Zonk,❤️ Bonus Pap Cantik,💔 Kosong");
+  const [gachaPool1Input, setGachaPool1Input] = useState("💔 Coba Lagi,🍿 Ditraktir Seblak Next Date,💔 Kurang Beruntung");
 
   // 4. Game 3: Kupon Gosok Afeksi
   const [scratchNotes, setScratchNotes] = useState([
@@ -49,7 +49,7 @@ export default function EditPage() {
     { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" }
   ]);
 
-  // 8. Playlist Audio Musik (Menggunakan URL Audio MP3 Langsung)
+  // 8. Playlist Audio Musik
   const [tracks, setTracks] = useState([
     { title: "Lover", artist: "Taylor Swift", duration: "03:41", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
   ]);
@@ -58,11 +58,6 @@ export default function EditPage() {
   // FITUR AMBIL DATA UTAMA DARI LOCAL STORAGE
   // ==========================================
   useEffect(() => {
-    const loadFromStorage = (key: string, setter: Function) => {
-      const saved = localStorage.getItem(key);
-      if (saved) setter(JSON.parse(saved));
-    };
-
     const savedLdr = localStorage.getItem("our_ldr");
     const savedNote = localStorage.getItem("our_note");
     const savedLat = localStorage.getItem("home_lat");
@@ -75,18 +70,28 @@ export default function EditPage() {
     if (savedLng) setHomeLongitude(savedLng);
     if (savedLabel) setHomeLabel(savedLabel);
 
+    const loadFromStorage = (key: string, setter: Function) => {
+      const saved = localStorage.getItem(key);
+      if (saved) setter(JSON.parse(saved));
+    };
+
     loadFromStorage("click_missions", setClickMissions);
-    loadFromStorage("gacha_pool_0", setGachaPool0);
-    loadFromStorage("gacha_pool_1", setGachaPool1);
     loadFromStorage("scratch_notes", setScratchNotes);
     loadFromStorage("quiz_pool", setQuizPool);
     loadFromStorage("puzzle_sentences", setPuzzleSentences);
     loadFromStorage("our_photos", setPhotos);
     loadFromStorage("our_tracks", setTracks);
+
+    // Load khusus Gacha Pool agar disinkronkan ke string input
+    const savedGacha0 = localStorage.getItem("gacha_pool_0");
+    if (savedGacha0) setGachaPool0Input(JSON.parse(savedGacha0).join(","));
+    
+    const savedGacha1 = localStorage.getItem("gacha_pool_1");
+    if (savedGacha1) setGachaPool1Input(JSON.parse(savedGacha1).join(","));
   }, []);
 
   // ==========================================
-  // FUNGSI MANIPULASI DATA (TAMBAH / EDIT / HAPUS)
+  // FUNGSI MANIPULASI DATA
   // ==========================================
 
   // Game 1: Clicker
@@ -106,19 +111,21 @@ export default function EditPage() {
   };
   const handleUpdateQuizOpt = (quizIdx: number, optIdx: number, val: string) => {
     const copy = [...quizPool];
-    copy[quizIdx].a[optIdx] = val;
+    const updatedAnswers = [...copy[quizIdx].a];
+    updatedAnswers[optIdx] = val;
+    copy[quizIdx] = { ...copy[quizIdx], a: updatedAnswers };
     setQuizPool(copy);
   };
 
   // Foto & Musik
   const handleUpdatePhoto = (i: number, key: "url" | "desc", val: string) => {
     const copy = [...photos];
-    copy[i][key] = val;
+    copy[i] = { ...copy[i], [key]: val };
     setPhotos(copy);
   };
   const handleUpdateTrack = (i: number, key: "title" | "artist" | "duration" | "audioUrl", val: string) => {
     const copy = [...tracks];
-    copy[i][key] = val;
+    copy[i] = { ...copy[i], [key]: val };
     setTracks(copy);
   };
 
@@ -126,14 +133,18 @@ export default function EditPage() {
   // SIMPAN SEMUA DATA KE LOCAL STORAGE
   // ==========================================
   const handleSaveAll = () => {
+    // Memproses data input string gacha menjadi array kembali saat disimpan
+    const pool0Array = gachaPool0Input.split(",").map(item => item.trim());
+    const pool1Array = gachaPool1Input.split(",").map(item => item.trim());
+
     localStorage.setItem("our_ldr", customLdr);
     localStorage.setItem("our_note", secretNote);
     localStorage.setItem("home_lat", homeLatitude);
     localStorage.setItem("home_lng", homeLongitude);
     localStorage.setItem("home_label", homeLabel);
     localStorage.setItem("click_missions", JSON.stringify(clickMissions));
-    localStorage.setItem("gacha_pool_0", JSON.stringify(gachaPool0));
-    localStorage.setItem("gacha_pool_1", JSON.stringify(gachaPool1));
+    localStorage.setItem("gacha_pool_0", JSON.stringify(pool0Array));
+    localStorage.setItem("gacha_pool_1", JSON.stringify(pool1Array));
     localStorage.setItem("scratch_notes", JSON.stringify(scratchNotes));
     localStorage.setItem("quiz_pool", JSON.stringify(quizPool));
     localStorage.setItem("puzzle_sentences", JSON.stringify(puzzleSentences));
@@ -223,7 +234,7 @@ export default function EditPage() {
                 <div className="flex justify-between text-[10px] text-white/30"><span>LEVEL MISI 0{i+1}</span><button onClick={() => setClickMissions(clickMissions.filter((_, idx) => idx !== i))} className="text-red-400">Hapus</button></div>
                 <input type="text" value={m.title} onChange={(e) => handleUpdateClick(i, "title", e.target.value)} placeholder="Judul misi/tantangan" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={m.target} onChange={(e) => handleUpdateClick(i, "target", parseInt(e.target.value) || 10)} placeholder="Target Klik" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                  <input type="number" value={m.target} onChange={(e) => handleUpdateClick(i, "target", parseInt(e.target.value) || 0)} placeholder="Target Klik" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
                   <input type="text" value={m.reward} onChange={(e) => handleUpdateClick(i, "reward", e.target.value)} placeholder="Reward/Hadiah Teks" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
                 </div>
               </div>
@@ -237,11 +248,11 @@ export default function EditPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
               <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 1 (Pisahkan dengan Koma)</span>
-              <input type="text" value={gachaPool0.join(",")} onChange={(e) => setGachaPool0(e.target.value.split(","))} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
+              <input type="text" value={gachaPool0Input} onChange={(e) => setGachaPool0Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
             </div>
             <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
               <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 2 (Pisahkan dengan Koma)</span>
-              <input type="text" value={gachaPool1.join(",")} onChange={(e) => setGachaPool1(e.target.value.split(","))} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
+              <input type="text" value={gachaPool1Input} onChange={(e) => setGachaPool1Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
             </div>
           </div>
         </section>

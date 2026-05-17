@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, useMotionValue, useMotionTemplate, AnimatePresence } from "framer-motion";
+import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 import Loading from "./components/Loading";
 
 export default function Home() {
@@ -10,75 +10,89 @@ export default function Home() {
   const [activeTrack, setActiveTrack] = useState<number | null>(null);
   const [trackProgress, setTrackProgress] = useState(0);
   const [isNoteDecrypted, setIsNoteDecrypted] = useState(false);
+  
+  // State Vibe/Mood
   const [myMood, setMyMood] = useState("Vibe: Lagi Kangen Berat");
   const [partnerMood, setPartnerMood] = useState("Vibe: Butuh Deep Talk");
 
   // ==========================================
-  // STATE & DATABASE UTK GAME DINAMIS (GONTA-GANTI)
+  // STATE GAME DENGAN PERSISTENCE LOCALSTORAGE
   // ==========================================
-  
-  // Game 1: Clicker Tantangan (Misi Ganti-Ganti)
   const [clickStage, setClickStage] = useState(0);
   const [clickCount, setClickCount] = useState(0);
+  const [gachaStage, setGachaStage] = useState(0);
+  const [gachaResult, setGachaResult] = useState<string | null>(null);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [scratchStage, setScratchStage] = useState(0);
+  const [isScratched, setIsScratched] = useState(false);
+  const [quizStage, setQuizStage] = useState(0);
+  const [quizFinished, setQuizFinished] = useState(false);
+  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
+  const [puzzleStage, setPuzzleStage] = useState(0);
+  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [puzzleWin, setPuzzleWin] = useState(false);
+
+  // Database Game
   const clickMissions = [
     { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
     { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" },
     { title: "Semburin Salting Level Max", target: 20, reward: "🔥 Doi Sukses Bikin Salting!", color: "from-amber-500 to-red-500" }
   ];
 
-  // Game 2: Gacha Kotak Misteri (Hadiah Ganti-Ganti)
-  const [gachaStage, setGachaStage] = useState(0);
-  const [gachaResult, setGachaResult] = useState<string | null>(null);
-  const [isShuffling, setIsShuffling] = useState(false);
   const gachaPool = [
     ["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"],
     ["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"],
     ["💔 Lewat", "✨ Free Deep Talk Semalaman", "💔 Kosong"]
   ];
 
-  // Game 3: Kupon Gosok Afeksi (Teks Ganti-Ganti)
-  const [scratchStage, setScratchStage] = useState(0);
-  const [isScratched, setIsScratched] = useState(false);
   const scratchNotes = [
     "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
     "Makasih ya udah bertahan sama aku sejauh ini. Proud of you! 💖",
     "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
   ];
 
-  // Game 4: Kuis Bertingkat (Soal Berubah Terus)
-  const [quizStage, setQuizStage] = useState(0);
-  const [quizFinished, setQuizFinished] = useState(false);
-  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
   const quizPool = [
     { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 },
     { q: "Kalo aku tiba-tiba ngilang, artinya aku lagi...", a: ["Tidur Pulas", "Ngambek Butuh Dibujuk", "Main Game"], c: 1 },
     { q: "Apa hal kecil dari kamu yang paling bikin aku candu?", a: ["Wanginya", "Ketawa Randomnya", "Pas Lagi Manja"], c: 1 }
   ];
 
-  // Game 5: Word Puzzle (Kalimat Berganti)
-  const [puzzleStage, setPuzzleStage] = useState(0);
-  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [puzzleWin, setPuzzleWin] = useState(false);
   const puzzleSentences = [
     ["Kamu", "Adalah", "Semesta", "Paling", "Indah"],
     ["Mau", "Bareng", "Kamu", "Sampai", "Tua"],
     ["Rindu", "Ini", "Curang", "Nambah", "Terus"]
   ];
 
+  // 1. Load data dari localStorage saat pertama kali buka website
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
+    
     const startDate = new Date("2024-01-01");
     const today = new Date();
     const difference = today.getTime() - startDate.getTime();
     setDaysTogether(Math.floor(difference / (1000 * 60 * 60 * 24)));
 
-    // Init Puzzle Stage 0
-    initPuzzle(0);
+    // Ambil history progres game jika ada
+    const savedClickStage = localStorage.getItem("clickStage");
+    const savedQuizStage = localStorage.getItem("quizStage");
+    const savedPuzzleStage = localStorage.getItem("puzzleStage");
+
+    if (savedClickStage) setClickStage(Number(savedClickStage));
+    if (savedQuizStage) setQuizStage(Number(savedQuizStage));
+    
+    if (savedPuzzleStage) {
+      const pStage = Number(savedPuzzleStage);
+      setPuzzleStage(pStage);
+      initPuzzle(pStage);
+    } else {
+      initPuzzle(0);
+    }
 
     return () => clearTimeout(timer);
   }, []);
 
+  // 2. Efek Audio Track Progress Gimmick
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (activeTrack !== null) {
@@ -90,7 +104,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [activeTrack]);
 
-  // HELPER INTERAKTIF
+  // Helper Puzzle
   const initPuzzle = (stageIdx: number) => {
     setSelectedWords([]);
     setPuzzleWin(false);
@@ -102,7 +116,9 @@ export default function Home() {
     if (clickCount + 1 >= currentMission.target) {
       setClickCount(currentMission.target);
       setTimeout(() => {
-        setClickStage((prev) => (prev + 1) % clickMissions.length);
+        const nextStage = (clickStage + 1) % clickMissions.length;
+        setClickStage(nextStage);
+        localStorage.setItem("clickStage", String(nextStage)); // Simpan progres
         setClickCount(0);
       }, 1000);
     } else {
@@ -119,7 +135,6 @@ export default function Home() {
       const winResult = currentPool[Math.floor(Math.random() * currentPool.length)];
       setGachaResult(winResult);
       
-      // Jika menang (bukan zonk/kosong), naikkan level gacha pool berikutnya
       if (!winResult.includes("💔")) {
         setTimeout(() => {
           setGachaStage((prev) => (prev + 1) % gachaPool.length);
@@ -135,7 +150,9 @@ export default function Home() {
       setTimeout(() => {
         setQuizFeedback(null);
         if (quizStage + 1 < quizPool.length) {
-          setQuizStage(quizStage + 1);
+          const nextQuiz = quizStage + 1;
+          setQuizStage(nextQuiz);
+          localStorage.setItem("quizStage", String(nextQuiz)); // Simpan progres
         } else {
           setQuizFinished(true);
         }
@@ -156,6 +173,7 @@ export default function Home() {
         setTimeout(() => {
           const nextStage = (puzzleStage + 1) % puzzleSentences.length;
           setPuzzleStage(nextStage);
+          localStorage.setItem("puzzleStage", String(nextStage)); // Simpan progres
           initPuzzle(nextStage);
         }, 1500);
       } else {
@@ -187,7 +205,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }} className="space-y-4">
           <span className="text-xs font-bold uppercase tracking-[0.3em] bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Our Tiny Universe // Edisi Skena Arcade Leveling</span>
           <h1 className="text-5xl md:text-8xl font-extrabold tracking-tighter bg-gradient-to-b from-white via-white/90 to-white/40 bg-clip-text text-transparent drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">Us Against The World.</h1>
-          <p className="text-white/40 mt-4 text-sm md:text-base max-w-md mx-auto font-light leading-relaxed">Selesaikan setiap misi buat ngebuka level selanjutnya. Kuis, gacha, dan kata-katanya bakal ganti otomatis biar ga bosen!</p>
+          <p className="text-white/40 mt-4 text-sm md:text-base max-w-md mx-auto font-light leading-relaxed">Selesaikan setiap misi buat ngebuka level selanjutnya. Kuis, gacha, dan kata-katanya bakal tersimpan otomatis!</p>
         </motion.div>
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}>
           <span className="text-[10px] uppercase tracking-widest text-white/30">Scroll Buat Main Game Misi</span>
@@ -195,36 +213,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ==========================================
-          DYNAMIC ARCENE ZONE (MISI BERUBAH-UBAH)
-          ========================================== */}
-      <Section title="🕹️ Skena Arcade Zone (Misi Ganti Otomatis)">
+      {/* DYNAMIC ARCADE ZONE */}
+      <Section title="🕹️ Skena Arcade Zone (Progres Tersimpan)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 [perspective:1000px]">
           
-          {/* GAME 1: CLICKER TANTANGAN DYNAMIC */}
+          {/* GAME 1: CLICKER TANTANGAN */}
           <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
               <div className="flex justify-between items-center">
                 <span className="text-pink-400 text-[10px] font-mono uppercase tracking-wider">Misi Ke-0{clickStage + 1}</span>
                 <span className="text-[9px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded font-mono font-bold animate-pulse">LIVE STAGE</span>
               </div>
-              <h3 className="text-sm font-bold mt-1 text-white">{clickMissions[clickStage].title}</h3>
+              <h3 className="text-sm font-bold mt-1 text-white">{clickMissions[clickStage]?.title}</h3>
               <p className="text-[11px] text-white/40 mt-1">Spam klik tombol di bawah sampai target terpenuhi buat klaim *reward*.</p>
             </div>
             <div className="my-2 text-center">
               <span className="text-2xl font-black block text-pink-500 font-mono">
-                {clickCount} / {clickMissions[clickStage].target}
+                {clickCount} / {clickMissions[clickStage]?.target}
               </span>
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                <div className={`h-full bg-gradient-to-r ${clickMissions[clickStage].color} transition-all duration-150`} style={{ width: `${(clickCount / clickMissions[clickStage].target) * 100}%` }} />
+                <div className={`h-full bg-gradient-to-r ${clickMissions[clickStage]?.color} transition-all duration-150`} style={{ width: `${(clickCount / (clickMissions[clickStage]?.target || 1)) * 100}%` }} />
               </div>
             </div>
             <button onClick={handleClicker} className="w-full py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
-              {clickCount === clickMissions[clickStage].target ? "🎉 MISI CLEAR! LOADING..." : "⚡ TAP / SPAM DISINI"}
+              {clickCount === clickMissions[clickStage]?.target ? "🎉 MISI CLEAR! LOADING..." : "⚡ TAP / SPAM DISINI"}
             </button>
           </Card>
 
-          {/* GAME 2: GACHA REWARD LEVELING */}
+          {/* GAME 2: GACHA REWARD */}
           <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
               <div className="flex justify-between items-center">
@@ -244,7 +260,7 @@ export default function Home() {
               )}
             </div>
             <button onClick={playGacha} disabled={isShuffling} className="w-full py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
-              🎰 SPIN GACHA SEKARANG
+              {isShuffling ? "🎰 SHUFFLING..." : "🎰 SPIN GACHA SEKARANG"}
             </button>
           </Card>
 
@@ -281,12 +297,12 @@ export default function Home() {
             <div className="my-2 min-h-[90px] flex flex-col justify-center">
               {!quizFinished ? (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-white/80 font-medium leading-tight">{quizPool[quizStage].q}</p>
+                  <p className="text-[11px] text-white/80 font-medium leading-tight">{quizPool[quizStage]?.q}</p>
                   {quizFeedback ? (
                     <p className="text-[10px] text-amber-400 font-mono bg-amber-500/5 p-1 rounded border border-amber-500/10 text-center">{quizFeedback}</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-1">
-                      {quizPool[quizStage].a.map((opt, idx) => (
+                      {quizPool[quizStage]?.a.map((opt, idx) => (
                         <button key={idx} onClick={() => handleQuiz(idx)} className="text-left text-[10px] p-1.5 bg-white/[0.02] border border-white/5 rounded hover:bg-white/5 text-white/70 transition-colors truncate">
                           {idx + 1}. {opt}
                         </button>
@@ -298,14 +314,14 @@ export default function Home() {
                 <div className="text-center">
                   <p className="text-xs text-emerald-400 font-bold">🎉 Semua Kuis Dilibas Abis!</p>
                   <p className="text-[10px] text-white/40 mt-1">Kamu emang beneran paham luar dalem tentang aku.</p>
-                  <button onClick={() => { setQuizStage(0); setQuizFinished(false); }} className="text-[10px] text-amber-400 underline font-mono mt-2 block mx-auto">Reset Sesi Kuis</button>
+                  <button onClick={() => { setQuizStage(0); setQuizFinished(false); localStorage.removeItem("quizStage"); }} className="text-[10px] text-amber-400 underline font-mono mt-2 block mx-auto">Reset Sesi Kuis</button>
                 </div>
               )}
             </div>
             <span className="text-[9px] text-white/20 font-mono">AUTOMATIC LEVEL PROGRESSION</span>
           </Card>
 
-          {/* GAME 5: WORD SCRAMBLER PUZZLE (LEBAR 2 KOLOM) */}
+          {/* GAME 5: WORD SCRAMBLER PUZZLE */}
           <Card className="p-5 flex flex-col justify-between min-h-[230px] md:col-span-2">
             <div>
               <div className="flex justify-between items-center">
@@ -316,14 +332,12 @@ export default function Home() {
               <p className="text-[11px] text-white/40 mt-1">Urutin rangkaian kata di bawah. Sukses menyusun bakal langsung ngelempar kamu ke stage kata berikutnya!</p>
             </div>
             <div className="my-2 space-y-2">
-              {/* Hasil Pilihan */}
               <div className="p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg min-h-[36px] flex flex-wrap gap-1.5 items-center">
                 {selectedWords.map((w, i) => (
                   <span key={i} className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-medium font-mono">{w}</span>
                 ))}
                 {selectedWords.length === 0 && <span className="text-[10px] text-white/20 italic font-mono">Tap susunan kata di bawah...</span>}
               </div>
-              {/* Opsi Kata Acak */}
               <div className="flex flex-wrap gap-1.5">
                 {shuffledWords.map((word, index) => (
                   <button key={index} onClick={() => handleWordClick(word, index)} className="text-[10px] bg-white/[0.03] hover:bg-white/10 border border-white/5 px-2.5 py-1 rounded transition-colors text-white/80 font-mono">
@@ -341,9 +355,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ==========================================
-          TELEMETRI & CORE MEMORIES (TETAP DIPERTAHANKAN)
-          ========================================== */}
+      {/* CORE MEMORIES & TELEMETRY SECTION */}
       <Section title="📊 Dashboard Telemetri & Log Aktivitas">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-6 sm:col-span-2 flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent min-h-[180px]">
@@ -384,7 +396,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* REPOSITORI VISUAL & AUDIO FOOTER RE-RENDER */}
+      {/* REPOSITORI VISUAL & AUDIO */}
       <Section title="📸 Our Visual Dump & Core Memories">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
@@ -431,7 +443,7 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* FOOTER TERMINAL */}
+      {/* FOOTER */}
       <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto gap-4 px-6 pb-12">
         <Card className="p-5 bg-white/[0.02] md:col-span-1 cursor-pointer flex flex-col justify-between min-h-[160px]" onClick={() => setIsNoteDecrypted(!isNoteDecrypted)}>
           <div>
@@ -466,15 +478,16 @@ export default function Home() {
   );
 }
 
+// Komponen Sub-Section & Card tetap sama seperti kode Anda
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.05 }} transition={{ duration: 0.6 }} className="max-w-5xl mx-auto px-6 py-12">
+    <section className="max-w-5xl mx-auto px-6 py-12">
       <div className="flex items-center gap-4 mb-6">
         <h2 className="text-xs uppercase tracking-[0.25em] text-white/40 font-bold whitespace-nowrap">{title}</h2>
         <div className="w-full h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
       </div>
       {children}
-    </motion.section>
+    </section>
   );
 }
 
