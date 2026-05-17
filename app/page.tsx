@@ -1,65 +1,162 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Loading from "./components/Loading";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) return <Loading />;
+
+  // 🔐 CHECK LOGIN BEFORE GO EDIT
+  const handleEditClick = () => {
+    const auth = localStorage.getItem("auth");
+
+    if (auth === "admin") {
+      router.push("/edit");
+    } else {
+      router.push("/login");
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-[#070A12] text-white relative overflow-hidden">
+
+      {/* BACKGROUND GLOW */}
+      <div className="absolute w-[600px] h-[600px] bg-pink-500/10 blur-[180px] top-[-200px] left-[-200px]" />
+      <div className="absolute w-[500px] h-[500px] bg-blue-500/10 blur-[160px] bottom-[-200px] right-[-200px]" />
+
+      {/* TOP RIGHT BUTTON (PROTECTED EDIT) */}
+      <div className="fixed top-5 right-5 z-50">
+        <button
+          onClick={handleEditClick}
+          className="px-4 py-2 rounded-full bg-pink-500 hover:bg-pink-600 text-xs shadow-lg transition-all"
+        >
+          Edit Photos ✏️
+        </button>
+      </div>
+
+      {/* HERO */}
+      <section className="h-screen flex flex-col items-center justify-center text-center px-6">
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-6xl font-semibold"
+        >
+          Our Memory Space
+        </motion.h1>
+
+        <p className="text-white/50 mt-4 text-sm max-w-md">
+          A quiet place for memories, music, and stories.
+        </p>
+
+      </section>
+
+      {/* STATUS */}
+      <Section title="Relationship Status">
+        <Card>
+          <span className="text-pink-400 font-semibold">
+            In a Quiet Love Story
+          </span>
+          <p className="text-white/50 text-xs mt-1">
+            Since 2024
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </Card>
+      </Section>
+
+      {/* MUSIC */}
+      <Section title="Favorite Music">
+        {["Lover - Taylor Swift", "About You - The 1975", "Best Friend - Rex Orange County"].map((m, i) => (
+          <Card key={i} hover>
+            🎵 {m}
+          </Card>
+        ))}
+      </Section>
+
+      {/* PLACES */}
+      <Section title="Places We’ve Been">
+        {["Sunset Beach", "Night Coffee Shop", "City Walk"].map((p, i) => (
+          <Card key={i} hover>
+            📍 {p}
+          </Card>
+        ))}
+      </Section>
+
+      {/* STORY */}
+      <Section title="Story">
+        <Card>
+          Some memories are private, but meaningful.
+        </Card>
+      </Section>
+
+      {/* QUOTE */}
+      <Section title="Quote">
+        <Card center>
+          “We didn’t plan it, but we stayed.”
+        </Card>
+      </Section>
+
+      {/* FOOTER */}
+      <p className="text-center text-white/30 text-xs py-10">
+        made with memories & simplicity
+      </p>
+
+    </main>
+  );
+}
+
+/* SECTION */
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 60 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      className="max-w-3xl mx-auto px-6 py-16"
+    >
+      <h2 className="text-xs uppercase tracking-widest text-white/40 mb-4 border-l-2 border-pink-500 pl-3">
+        {title}
+      </h2>
+      <div className="space-y-3">{children}</div>
+    </motion.section>
+  );
+}
+
+/* CARD */
+function Card({
+  children,
+  hover,
+  center,
+}: {
+  children: React.ReactNode;
+  hover?: boolean;
+  center?: boolean;
+}) {
+  return (
+    <div
+      className={`
+        p-4 rounded-xl bg-white/5 border border-white/10 text-sm
+        transition-all duration-300
+        ${hover ? "hover:scale-[1.02] hover:bg-white/10" : ""}
+        ${center ? "text-center" : ""}
+      `}
+    >
+      {children}
     </div>
   );
 }
