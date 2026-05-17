@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/utils/supabase"; // Pastikan path impor client Supabase kamu sudah benar
 
 export default function EditPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   // ==========================================
-  // STATE MASTER DATA (SEMUA BISA DIEDIT)
+  // STATE MASTER DATA (TERKONEKSI SUPABASE)
   // ==========================================
   
   // 1. Data Umum, Jarak LDR, & Koordinat Rumah Presisi
@@ -18,80 +20,76 @@ export default function EditPage() {
   const [homeLabel, setHomeLabel] = useState("Rumah Kesayangan");
 
   // 2. Game 1: Clicker Tantangan
-  const [clickMissions, setClickMissions] = useState([
-    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
-    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" }
-  ]);
+  const [clickMissions, setClickMissions] = useState<any[]>([]);
 
-  // 3. Game 2: Pilihan Gacha (Menggunakan string agar input lancar diketik)
-  const [gachaPool0Input, setGachaPool0Input] = useState("💔 Zonk,❤️ Bonus Pap Cantik,💔 Kosong");
-  const [gachaPool1Input, setGachaPool1Input] = useState("💔 Coba Lagi,🍿 Ditraktir Seblak Next Date,💔 Kurang Beruntung");
+  // 3. Game 2: Pilihan Gacha (Input string dikonversi ke Array JSONB)
+  const [gachaPool0Input, setGachaPool0Input] = useState("");
+  const [gachaPool1Input, setGachaPool1Input] = useState("");
 
   // 4. Game 3: Kupon Gosok Afeksi
-  const [scratchNotes, setScratchNotes] = useState([
-    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
-    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
-  ]);
+  const [scratchNotes, setScratchNotes] = useState<string[]>([]);
 
   // 5. Game 4: Kuis Bertingkat
-  const [quizPool, setQuizPool] = useState([
-    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 }
-  ]);
+  const [quizPool, setQuizPool] = useState<any[]>([]);
 
   // 6. Game 5: Word Puzzle (Susun Kata)
-  const [puzzleSentences, setPuzzleSentences] = useState([
-    "Kamu,Adalah,Semesta,Paling,Indah",
-    "Mau,Bareng,Kamu,Sampai,Tua"
-  ]);
+  const [puzzleInput, setPuzzleInput] = useState<string[]>([]);
 
   // 7. Repositori Foto Dump
-  const [photos, setPhotos] = useState([
-    { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" }
-  ]);
+  const [photos, setPhotos] = useState<any[]>([]);
 
   // 8. Playlist Audio Musik
-  const [tracks, setTracks] = useState([
-    { title: "Lover", artist: "Taylor Swift", duration: "03:41", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
-  ]);
+  const [tracks, setTracks] = useState<any[]>([]);
 
   // ==========================================
-  // FITUR AMBIL DATA UTAMA DARI LOCAL STORAGE
+  // FITUR AMBIL DATA UTAMA DARI SUPABASE CLOUD
   // ==========================================
   useEffect(() => {
-    const savedLdr = localStorage.getItem("our_ldr");
-    const savedNote = localStorage.getItem("our_note");
-    const savedLat = localStorage.getItem("home_lat");
-    const savedLng = localStorage.getItem("home_lng");
-    const savedLabel = localStorage.getItem("home_label");
+    const fetchCurrentConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("web_config")
+          .select("*")
+          .single(); // Mengambil satu baris konfigurasi aktif
 
-    if (savedLdr) setCustomLdr(savedLdr);
-    if (savedNote) setSecretNote(savedNote);
-    if (savedLat) setHomeLatitude(savedLat);
-    if (savedLng) setHomeLongitude(savedLng);
-    if (savedLabel) setHomeLabel(savedLabel);
+        if (error) throw error;
 
-    const loadFromStorage = (key: string, setter: Function) => {
-      const saved = localStorage.getItem(key);
-      if (saved) setter(JSON.parse(saved));
+        if (data) {
+          if (data.status_ldr) setCustomLdr(data.status_ldr);
+          if (data.pesan_rahasia) setSecretNote(data.pesan_rahasia);
+          if (data.latitude) setHomeLatitude(String(data.latitude));
+          if (data.longitude) setHomeLongitude(String(data.longitude));
+          if (data.lokasi_utama) setHomeLabel(data.lokasi_utama);
+          
+          if (data.click_missions) setClickMissions(data.click_missions);
+          if (data.scratch_notes) setScratchNotes(data.scratch_notes);
+          if (data.quiz_pool) setQuizPool(data.quiz_pool);
+          if (data.galeri_foto) setPhotos(data.galeri_foto);
+          if (data.audio_tracks) setTracks(data.audio_tracks);
+
+          // Rekonstruksi Gacha Pool (Array of Array) ke Input Teks Editor
+          if (data.gacha_pool && data.gacha_pool.length >= 2) {
+            setGachaPool0Input(data.gacha_pool[0].join(", "));
+            setGachaPool1Input(data.gacha_pool[1].join(", "));
+          }
+
+          // Rekonstruksi Game Word Scrambler
+          if (data.game_scrambler) {
+            setPuzzleInput(data.game_scrambler);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat konfigurasi dari Supabase:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadFromStorage("click_missions", setClickMissions);
-    loadFromStorage("scratch_notes", setScratchNotes);
-    loadFromStorage("quiz_pool", setQuizPool);
-    loadFromStorage("puzzle_sentences", setPuzzleSentences);
-    loadFromStorage("our_photos", setPhotos);
-    loadFromStorage("our_tracks", setTracks);
-
-    // Load khusus Gacha Pool agar disinkronkan ke string input
-    const savedGacha0 = localStorage.getItem("gacha_pool_0");
-    if (savedGacha0) setGachaPool0Input(JSON.parse(savedGacha0).join(","));
-    
-    const savedGacha1 = localStorage.getItem("gacha_pool_1");
-    if (savedGacha1) setGachaPool1Input(JSON.parse(savedGacha1).join(","));
+    fetchCurrentConfig();
   }, []);
 
   // ==========================================
-  // FUNGSI MANIPULASI DATA
+  // FUNGSI MANIPULASI DATA LOKAL EDITOR
   // ==========================================
 
   // Game 1: Clicker
@@ -130,30 +128,52 @@ export default function EditPage() {
   };
 
   // ==========================================
-  // SIMPAN SEMUA DATA KE LOCAL STORAGE
+  // SIMPAN SEMUA DATA KE SUPABASE CLOUD
   // ==========================================
-  const handleSaveAll = () => {
-    // Memproses data input string gacha menjadi array kembali saat disimpan
-    const pool0Array = gachaPool0Input.split(",").map(item => item.trim());
-    const pool1Array = gachaPool1Input.split(",").map(item => item.trim());
+  const handleSaveAll = async () => {
+    try {
+      // Parsing string gacha kembali menjadi array terstruktur
+      const pool0Array = gachaPool0Input.split(",").map(item => item.trim()).filter(Boolean);
+      const pool1Array = gachaPool1Input.split(",").map(item => item.trim()).filter(Boolean);
+      const structuredGachaPool = [pool0Array, pool1Array];
 
-    localStorage.setItem("our_ldr", customLdr);
-    localStorage.setItem("our_note", secretNote);
-    localStorage.setItem("home_lat", homeLatitude);
-    localStorage.setItem("home_lng", homeLongitude);
-    localStorage.setItem("home_label", homeLabel);
-    localStorage.setItem("click_missions", JSON.stringify(clickMissions));
-    localStorage.setItem("gacha_pool_0", JSON.stringify(pool0Array));
-    localStorage.setItem("gacha_pool_1", JSON.stringify(pool1Array));
-    localStorage.setItem("scratch_notes", JSON.stringify(scratchNotes));
-    localStorage.setItem("quiz_pool", JSON.stringify(quizPool));
-    localStorage.setItem("puzzle_sentences", JSON.stringify(puzzleSentences));
-    localStorage.setItem("our_photos", JSON.stringify(photos));
-    localStorage.setItem("our_tracks", JSON.stringify(tracks));
+      // Ambil ID baris pertama atau lakukan upsert terpusat pada baris utama database
+      const { error } = await supabase
+        .from("web_config")
+        .upsert({
+          id: 1, // ID Konfigurasi Tetap
+          status_ldr: customLdr,
+          pesan_rahasia: secretNote,
+          latitude: parseFloat(homeLatitude) || 0,
+          longitude: parseFloat(homeLongitude) || 0,
+          lokasi_utama: homeLabel,
+          click_missions: clickMissions,
+          gacha_pool: structuredGachaPool,
+          scratch_notes: scratchNotes,
+          quiz_pool: quizPool,
+          game_scrambler: puzzleInput,
+          galeri_foto: photos,
+          audio_tracks: tracks,
+          updated_at: new Date().toISOString()
+        });
 
-    alert("✨ Sukses! Semua data interaktif, musik, & lokasi presisi disimpan lewat Local Storage.");
-    router.push("/");
+      if (error) throw error;
+
+      alert("✨ Cloud Sync Sukses! Semua data interaktif, arsitektur game, & musik telah disimpan di Supabase.");
+      router.push("/");
+    } catch (err: any) {
+      console.error(err);
+      alert(`❌ Gagal menyimpan data ke database: ${err.message || err}`);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#05070c] flex items-center justify-center font-mono text-xs text-white/40">
+        MENGAMBIL TELEMETRI CONFIG DARI SUPABASE...
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#05070c] text-white p-6 pb-20 font-sans selection:bg-pink-500/20">
@@ -161,7 +181,7 @@ export default function EditPage() {
       {/* HEADER CONTROL */}
       <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-6 mb-8">
         <div>
-          <span className="text-xs font-mono text-pink-400 tracking-widest">// SETTING PUSAT SISTEM</span>
+          <span className="text-xs font-mono text-pink-400 tracking-widest">// SETTING PUSAT DATABASE CLOUD</span>
           <h1 className="text-2xl font-black tracking-tight mt-1">Skena Customizer & Editor Interaktif</h1>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -194,7 +214,7 @@ export default function EditPage() {
             </div>
           </div>
           <div className="p-3 bg-white/[0.01] border border-white/5 rounded-xl text-[11px] text-white/40">
-            💡 <span className="text-white/70 font-semibold">Info Link:</span> Sistem depan akan otomatis mengarahkan ke Google Maps dengan presisi tinggi berdasarkan titik koordinat: <a href={`https://www.google.com/maps/search/?api=1&query=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-mono">{homeLatitude}, {homeLongitude}</a>
+            💡 <span className="text-white/70 font-semibold">Info Link:</span> Sistem depan akan otomatis mengarahkan ke Google Maps dengan presisi tinggi berdasarkan titik koordinat: <a href={`http://googleusercontent.com/maps.google.com/${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-mono">{homeLatitude}, {homeLongitude}</a>
           </div>
         </section>
 
@@ -209,13 +229,13 @@ export default function EditPage() {
               <div key={i} className="p-4 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
                 <div className="flex justify-between text-[10px] text-white/30"><span>TRACK AUDIO 0{i+1}</span><button onClick={() => setTracks(tracks.filter((_, idx) => idx !== i))} className="text-red-400">Hapus Musik</button></div>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  <input type="text" value={t.title} onChange={(e) => handleUpdateTrack(i, "title", e.target.value)} placeholder="Judul Lagu" className="w-full p-2 bg-white/5 rounded border border-white/10" />
-                  <input type="text" value={t.artist} onChange={(e) => handleUpdateTrack(i, "artist", e.target.value)} placeholder="Penyanyi / Artis" className="w-full p-2 bg-white/5 rounded border border-white/10" />
-                  <input type="text" value={t.duration} onChange={(e) => handleUpdateTrack(i, "duration", e.target.value)} placeholder="Durasi Teks (Menit:Detik)" className="w-full p-2 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={t.title || ""} onChange={(e) => handleUpdateTrack(i, "title", e.target.value)} placeholder="Judul Lagu" className="w-full p-2 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={t.artist || ""} onChange={(e) => handleUpdateTrack(i, "artist", e.target.value)} placeholder="Penyanyi / Artis" className="w-full p-2 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={t.duration || ""} onChange={(e) => handleUpdateTrack(i, "duration", e.target.value)} placeholder="Durasi Teks (Menit:Detik)" className="w-full p-2 bg-white/5 rounded border border-white/10" />
                 </div>
                 <div>
                   <label className="text-[10px] text-white/40 block mb-0.5">Link Direct File Audio (.mp3)</label>
-                  <input type="text" value={t.audioUrl} onChange={(e) => handleUpdateTrack(i, "audioUrl", e.target.value)} placeholder="https://domain.com/lagu-kamu.mp3" className="w-full p-2 bg-white/5 rounded border border-white/10 font-mono text-purple-300" />
+                  <input type="text" value={t.audioUrl || ""} onChange={(e) => handleUpdateTrack(i, "audioUrl", e.target.value)} placeholder="https://domain.com/lagu-kamu.mp3" className="w-full p-2 bg-white/5 rounded border border-white/10 font-mono text-purple-300" />
                 </div>
               </div>
             ))}
@@ -232,10 +252,10 @@ export default function EditPage() {
             {clickMissions.map((m, i) => (
               <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
                 <div className="flex justify-between text-[10px] text-white/30"><span>LEVEL MISI 0{i+1}</span><button onClick={() => setClickMissions(clickMissions.filter((_, idx) => idx !== i))} className="text-red-400">Hapus</button></div>
-                <input type="text" value={m.title} onChange={(e) => handleUpdateClick(i, "title", e.target.value)} placeholder="Judul misi/tantangan" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                <input type="text" value={m.title || ""} onChange={(e) => handleUpdateClick(i, "title", e.target.value)} placeholder="Judul misi/tantangan" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={m.target} onChange={(e) => handleUpdateClick(i, "target", parseInt(e.target.value) || 0)} placeholder="Target Klik" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
-                  <input type="text" value={m.reward} onChange={(e) => handleUpdateClick(i, "reward", e.target.value)} placeholder="Reward/Hadiah Teks" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                  <input type="number" value={m.target || 0} onChange={(e) => handleUpdateClick(i, "target", parseInt(e.target.value) || 0)} placeholder="Target Klik" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={m.reward || ""} onChange={(e) => handleUpdateClick(i, "reward", e.target.value)} placeholder="Reward/Hadiah Teks" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
                 </div>
               </div>
             ))}
@@ -257,6 +277,27 @@ export default function EditPage() {
           </div>
         </section>
 
+        {/* GAME 3 - KUPON GOSOK AFEKSI */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-purple-400">✨ Game 3: Kupon Gosok Afeksi (Teks Acak)</h2>
+            <button onClick={() => setScratchNotes([...scratchNotes, "Teks kupon baru disini..."])} className="text-[11px] bg-purple-500/10 text-purple-400 px-2 py-1 rounded border border-purple-500/20">+ Tambah Kupon</button>
+          </div>
+          <div className="space-y-2">
+            {scratchNotes.map((note, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <span className="text-xs text-white/30 font-mono">0{i+1}</span>
+                <input type="text" value={note} onChange={(e) => {
+                  const copy = [...scratchNotes];
+                  copy[i] = e.target.value;
+                  setScratchNotes(copy);
+                }} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
+                <button onClick={() => setScratchNotes(scratchNotes.filter((_, idx) => idx !== i))} className="text-xs text-red-400 px-2">Hapus</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* 5. GAME 4 - KUIS BERTINGKAT */}
         <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
           <div className="flex justify-between items-center">
@@ -267,18 +308,18 @@ export default function EditPage() {
             {quizPool.map((q, qIdx) => (
               <div key={qIdx} className="p-4 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
                 <div className="flex justify-between items-center"><span className="font-mono text-emerald-400">PERTANYAAN STAGE {qIdx+1}</span><button onClick={() => setQuizPool(quizPool.filter((_, idx) => idx !== qIdx))} className="text-red-400">Hapus Soal</button></div>
-                <input type="text" value={q.q} onChange={(e) => handleUpdateQuiz(qIdx, "q", e.target.value)} placeholder="Teks Pertanyaan" className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-semibold" />
+                <input type="text" value={q.q || ""} onChange={(e) => handleUpdateQuiz(qIdx, "q", e.target.value)} placeholder="Teks Pertanyaan" className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-semibold" />
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {q.a.map((opt, optIdx) => (
+                  {q.a?.map((opt: string, optIdx: number) => (
                     <div key={optIdx} className="space-y-1">
                       <label className="text-[10px] text-white/30">Pilihan {optIdx+1}</label>
-                      <input type="text" value={opt} onChange={(e) => handleUpdateQuizOpt(qIdx, optIdx, e.target.value)} className="w-full p-1.5 bg-white/5 border border-white/10 rounded" />
+                      <input type="text" value={opt || ""} onChange={(e) => handleUpdateQuizOpt(qIdx, optIdx, e.target.value)} className="w-full p-1.5 bg-white/5 border border-white/10 rounded" />
                     </div>
                   ))}
                 </div>
                 <div className="pt-1">
                   <label className="text-[10px] text-amber-400 block mb-1">Index Pilihan Benar (Isi 0 untuk Pilihan 1, Isi 1 untuk Pilihan 2, Isi 2 untuk Pilihan 3)</label>
-                  <input type="number" min={0} max={2} value={q.c} onChange={(e) => handleUpdateQuiz(qIdx, "c", parseInt(e.target.value) || 0)} className="w-16 p-1 bg-white/10 border border-white/20 rounded font-mono text-center" />
+                  <input type="number" min={0} max={2} value={q.c ?? 0} onChange={(e) => handleUpdateQuiz(qIdx, "c", parseInt(e.target.value) || 0)} className="w-16 p-1 bg-white/10 border border-white/20 rounded font-mono text-center" />
                 </div>
               </div>
             ))}
@@ -289,19 +330,19 @@ export default function EditPage() {
         <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-cyan-400">✍️ Game 5: Love Scrambler (Susun Rangkaian Kata)</h2>
-            <button onClick={() => setPuzzleSentences([...puzzleSentences, "Kita,Selamanya,Bersama"])} className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded border border-cyan-500/20">+ Tambah Kalimat Baru</button>
+            <button onClick={() => setPuzzleInput([...puzzleInput, "Kita, Selamanya, Bersama"])} className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded border border-cyan-500/20">+ Tambah Kalimat Baru</button>
           </div>
           <p className="text-[11px] text-white/30 leading-none">*Format wajib dipisah tanda koma tanpa spasi agar mesin pengacak bekerja sempurna.</p>
           <div className="space-y-2">
-            {puzzleSentences.map((sentence, i) => (
+            {puzzleInput.map((sentence, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <span className="text-xs text-white/30 font-mono">0{i+1}</span>
                 <input type="text" value={sentence} onChange={(e) => {
-                  const copy = [...puzzleSentences];
+                  const copy = [...puzzleInput];
                   copy[i] = e.target.value;
-                  setPuzzleSentences(copy);
+                  setPuzzleInput(copy);
                 }} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs font-mono text-cyan-300" />
-                <button onClick={() => setPuzzleSentences(puzzleSentences.filter((_, idx) => idx !== i))} className="text-xs text-red-400 px-2">Hapus</button>
+                <button onClick={() => setPuzzleInput(puzzleInput.filter((_, idx) => idx !== i))} className="text-xs text-red-400 px-2">Hapus</button>
               </div>
             ))}
           </div>
@@ -316,8 +357,8 @@ export default function EditPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             {photos.map((p, i) => (
               <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1.5 text-xs">
-                <input type="text" value={p.url} onChange={(e) => handleUpdatePhoto(i, "url", e.target.value)} placeholder="Link URL Gambar Unsplash / Pin" className="w-full p-1.5 bg-white/5 rounded text-[11px] font-mono text-white/60" />
-                <input type="text" value={p.desc} onChange={(e) => handleUpdatePhoto(i, "desc", e.target.value)} placeholder="Keterangan Kenangan Foto Ini" className="w-full p-1.5 bg-white/5 rounded text-[11px]" />
+                <input type="text" value={p.url || ""} onChange={(e) => handleUpdatePhoto(i, "url", e.target.value)} placeholder="Link URL Gambar Unsplash / Pin" className="w-full p-1.5 bg-white/5 rounded text-[11px] font-mono text-white/60" />
+                <input type="text" value={p.desc || ""} onChange={(e) => handleUpdatePhoto(i, "desc", e.target.value)} placeholder="Keterangan Kenangan Foto Ini" className="w-full p-1.5 bg-white/5 rounded text-[11px]" />
                 <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))} className="text-[10px] text-red-400 block pt-0.5">Hapus Slot Gambar</button>
               </div>
             ))}

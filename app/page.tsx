@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, useMotionValue, useMotionTemplate } from "framer-motion";
 import Loading from "./components/Loading";
+import { supabase } from "@/utils/supabase"; // Import client Supabase kamu
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,7 @@ export default function Home() {
   const [partnerMood, setPartnerMood] = useState("Vibe: Butuh Deep Talk");
 
   // ==========================================================
-  // STATE DINAMIS YANG DISINKRONKAN DENGAN EDITOR ADMIN CONTROL
+  // STATE DINAMIS YANG DISINKRONKAN DENGAN DATABASE SUPABASE
   // ==========================================================
   const [customLdr, setCustomLdr] = useState("± 780 Km Antara Kita");
   const [secretNote, setSecretNote] = useState("Makasih banyak ya udah selalu sabar, chill, dan jadi safe place paling nyaman buat aku. I love you! ❤️");
@@ -24,37 +25,13 @@ export default function Home() {
   const [homeLongitude, setHomeLongitude] = useState("106.8272");
   const [homeLabel, setHomeLabel] = useState("Rumah Kesayangan");
 
-  const [clickMissions, setClickMissions] = useState([
-    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
-    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" }
-  ]);
-
-  const [gachaPool, setGachaPool] = useState([
-    ["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"],
-    ["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"]
-  ]);
-
-  const [scratchNotes, setScratchNotes] = useState([
-    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
-    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
-  ]);
-
-  const [quizPool, setQuizPool] = useState([
-    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 }
-  ]);
-
-  const [puzzleSentences, setPuzzleSentences] = useState([
-    ["Kamu", "Adalah", "Semesta", "Paling", "Indah"],
-    ["Mau", "Bareng", "Kamu", "Sampai", "Tua"]
-  ]);
-
-  const [photos, setPhotos] = useState([
-    { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" }
-  ]);
-
-  const [tracks, setTracks] = useState([
-    { title: "Lover", artist: "Taylor Swift", duration: "03:41" }
-  ]);
+  const [clickMissions, setClickMissions] = useState<any[]>([]);
+  const [gachaPool, setGachaPool] = useState<any[]>([]);
+  const [scratchNotes, setScratchNotes] = useState<any[]>([]);
+  const [quizPool, setQuizPool] = useState<any[]>([]);
+  const [puzzleSentences, setPuzzleSentences] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [tracks, setTracks] = useState<any[]>([]);
 
   // ==========================================
   // STATE PROGRESS GAMEPLAY USER
@@ -75,72 +52,75 @@ export default function Home() {
   const [puzzleWin, setPuzzleWin] = useState(false);
 
   // ==========================================
-  // 1. SINKRONISASI DATA DARI LOCAL STORAGE
+  // 1. SINKRONISASI DATA DARI SUPABASE CLOUD
   // ==========================================
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200);
-    
+    // Perhitungan Hari Jadian
     const startDate = new Date("2024-01-01");
     const today = new Date();
     const difference = today.getTime() - startDate.getTime();
     setDaysTogether(Math.floor(difference / (1000 * 60 * 60 * 24)));
 
-    // Ambil Data Kustom dari Admin Control
-    const savedLdr = localStorage.getItem("our_ldr");
-    const savedNote = localStorage.getItem("our_note");
-    const savedLat = localStorage.getItem("home_lat");
-    const savedLng = localStorage.getItem("home_lng");
-    const savedLabel = localStorage.getItem("home_label");
+    const fetchSupabaseData = async () => {
+      try {
+        // Ambil satu baris konfigurasi utama dari tabel web_config
+        const { data, error } = await supabase
+          .from("web_config")
+          .select("*")
+          .single();
 
-    if (savedLdr) setCustomLdr(savedLdr);
-    if (savedNote) setSecretNote(savedNote);
-    if (savedLat) setHomeLatitude(savedLat);
-    if (savedLng) setHomeLongitude(savedLng);
-    if (savedLabel) setHomeLabel(savedLabel);
+        if (error) throw error;
 
-    // Ambil Array Komponen Dinamis
-    if (localStorage.getItem("click_missions")) setClickMissions(JSON.parse(localStorage.getItem("click_missions")!));
-    if (localStorage.getItem("scratch_notes")) setScratchNotes(JSON.parse(localStorage.getItem("scratch_notes")!));
-    if (localStorage.getItem("quiz_pool")) setQuizPool(JSON.parse(localStorage.getItem("quiz_pool")!));
-    if (localStorage.getItem("our_photos")) setPhotos(JSON.parse(localStorage.getItem("our_photos")!));
-    if (localStorage.getItem("our_tracks")) setTracks(JSON.parse(localStorage.getItem("our_tracks")!));
+        if (data) {
+          if (data.status_ldr) setCustomLdr(data.status_ldr);
+          if (data.pesan_rahasia) setSecretNote(data.pesan_rahasia);
+          if (data.latitude) setHomeLatitude(String(data.latitude));
+          if (data.longitude) setHomeLongitude(String(data.longitude));
+          if (data.lokasi_utama) setHomeLabel(data.lokasi_utama);
 
-    // Rekonstruksi Struktur Data Gacha (Menggabungkan Tier 1 & Tier 2)
-    const savedGacha0 = localStorage.getItem("gacha_pool_0");
-    const savedGacha1 = localStorage.getItem("gacha_pool_1");
-    if (savedGacha0 && savedGacha1) {
-      setGachaPool([JSON.parse(savedGacha0), JSON.parse(savedGacha1)]);
-    }
+          // Tarik data komponen array / objek (JSONB)
+          if (data.audio_tracks) setTracks(data.audio_tracks);
+          if (data.galeri_foto) setPhotos(data.galeri_foto);
+          if (data.click_missions) setClickMissions(data.click_missions);
+          if (data.scratch_notes) setScratchNotes(data.scratch_notes);
+          if (data.quiz_pool) setQuizPool(data.quiz_pool);
+          
+          if (data.gacha_pool) {
+            setGachaPool(data.gacha_pool);
+          }
 
-    // Rekonstruksi Struktur Data Game Puzzle (String dipisah koma -> Array Kata)
-    const savedPuzzle = localStorage.getItem("puzzle_sentences");
-    let currentPuzzleData = puzzleSentences;
-    if (savedPuzzle) {
-      const rawSentences: string[] = JSON.parse(savedPuzzle);
-      currentPuzzleData = rawSentences.map(sentence => sentence.split(",").map(w => w.trim()));
-      setPuzzleSentences(currentPuzzleData);
-    }
+          // Konstruksi khusus untuk rekonstruksi game Puzzle Scrambler
+          if (data.game_scrambler) {
+            const rawSentences: string[] = data.game_scrambler;
+            const currentPuzzleData = rawSentences.map(sentence => 
+              sentence.split(",").map(w => w.trim())
+            );
+            setPuzzleSentences(currentPuzzleData);
 
-    // Ambil Progres Leveling Pengguna
+            // Set state game stage puzzle lokal user
+            const savedPuzzleStage = localStorage.getItem("puzzleStage");
+            const pStage = savedPuzzleStage ? Number(savedPuzzleStage) : 0;
+            const targetStage = currentPuzzleData[pStage] ? pStage : 0;
+            
+            setPuzzleStage(targetStage);
+            setShuffledWords([...currentPuzzleData[targetStage]].sort(() => Math.random() - 0.5));
+          }
+        }
+      } catch (err) {
+        console.error("Gagal mengambil data dari Supabase:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSupabaseData();
+
+    // Ambil Progres Gameplay Lokal User (Biar tidak bentrok antar browser)
     const savedClickStage = localStorage.getItem("clickStage");
     const savedQuizStage = localStorage.getItem("quizStage");
-    const savedPuzzleStage = localStorage.getItem("puzzleStage");
 
     if (savedClickStage) setClickStage(Number(savedClickStage));
     if (savedQuizStage) setQuizStage(Number(savedQuizStage));
-    
-    if (savedPuzzleStage) {
-      const pStage = Number(savedPuzzleStage);
-      setPuzzleStage(pStage);
-      // Menggunakan data puzzle yang ditarik terbaru agar tidak crash index undefined
-      const targetStage = currentPuzzleData[pStage] ? pStage : 0;
-      setPuzzleStage(targetStage);
-      setShuffledWords([...currentPuzzleData[targetStage]].sort(() => Math.random() - 0.5));
-    } else {
-      setShuffledWords([...currentPuzzleData[0]].sort(() => Math.random() - 0.5));
-    }
-
-    return () => clearTimeout(timer);
   }, []);
 
   // 2. Efek Audio Track Progress Gimmick
@@ -346,7 +326,7 @@ export default function Home() {
               )}
             </div>
             {isScratched && (
-              <button onClick={() => { setIsScratched(false); setScratchStage((prev) => (prev + 1) % scratchNotes.length); }} className="w-full py-1 text-center block font-mono text-[10px] text-purple-400/80 bg-purple-500/5 rounded hover:bg-purple-500/10 border border-purple-500/10 transition-colors">
+              <button onClick={() => { setIsScratched(false); setScratchStage((prev) => (prev + 1) % scratchNotes.length); }} className="w-full py-2 text-center block font-mono text-[10px] text-purple-400/80 bg-purple-500/5 rounded hover:bg-purple-500/10 border border-purple-500/10 transition-colors">
                 ✨ KLAIM & GANTI KUPON BARU
               </button>
             )}
@@ -366,7 +346,7 @@ export default function Home() {
                     <p className="text-[10px] text-amber-400 font-mono bg-amber-500/5 p-1 rounded border border-amber-500/10 text-center">{quizFeedback}</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-1">
-                      {quizPool[quizStage]?.a.map((opt, idx) => (
+                      {quizPool[quizStage]?.a.map((opt: string, idx: number) => (
                         <button key={idx} onClick={() => handleQuiz(idx)} className="text-left text-[10px] p-1.5 bg-white/[0.02] border border-white/5 rounded hover:bg-white/5 text-white/70 transition-colors truncate">
                           {idx + 1}. {opt}
                         </button>
@@ -454,7 +434,7 @@ export default function Home() {
               <button onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.5, behavior: "smooth" })} className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-pink-400 border border-white/5 transition-colors font-mono">📂 Foto Kita</button>
               <button className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-blue-400 border border-white/5 transition-colors font-mono cursor-not-allowed opacity-50">📝 Wishlist</button>
               <button onClick={() => window.scrollTo({ top: document.body.scrollHeight * 0.7, behavior: "smooth" })} className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-green-400 border border-white/5 transition-colors font-mono">🎵 Playlist</button>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-amber-400 border border-white/5 transition-colors font-mono flex items-center justify-center gap-1">📍 {homeLabel}</a>
+              <a href={`https://maps.google.com/?q=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-amber-400 border border-white/5 transition-colors font-mono flex items-center justify-center gap-1">📍 {homeLabel}</a>
             </div>
           </Card>
         </div>
