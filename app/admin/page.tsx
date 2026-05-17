@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase"; // Pastikan path impor client Supabase kamu sudah benar
+import { supabase } from "@/utils/supabase"; // Sesuaikan dengan path letak file supabase client kamu
 
 export default function EditPage() {
   const router = useRouter();
@@ -12,6 +12,11 @@ export default function EditPage() {
   // STATE MASTER DATA (TERKONEKSI SUPABASE)
   // ==========================================
   
+  // 0. Metadata & Pengaturan Tampilan Web
+  const [titleWeb, setTitleWeb] = useState("Our Special Place ❤️");
+  const [themeColor, setThemeColor] = useState("from-pink-500 to-purple-500");
+  const [musicAutoPlay, setMusicAutoPlay] = useState(false);
+
   // 1. Data Umum, Jarak LDR, & Koordinat Rumah Presisi
   const [customLdr, setCustomLdr] = useState("± 780 Km Antara Kita");
   const [secretNote, setSecretNote] = useState("Makasih banyak ya udah selalu sabar, chill, dan jadi safe place paling nyaman buat aku. I love you! ❤️");
@@ -50,17 +55,28 @@ export default function EditPage() {
         const { data, error } = await supabase
           .from("web_config")
           .select("*")
-          .single(); // Mengambil satu baris konfigurasi aktif
+          .eq("id", 1)
+          .single(); // Mengambil baris utama ID 1
 
-        if (error) throw error;
+        if (error && error.code !== "PGRST116") {
+          // PGRST116 berarti data masih kosong / belum ada baris sama sekali, tidak apa-apa gunakan default state
+          throw error;
+        }
 
         if (data) {
+          // Metadata & Pengaturan Tampilan Web
+          if (data.title_web) setTitleWeb(data.title_web);
+          if (data.theme_color) setThemeColor(data.theme_color);
+          if (data.music_auto_play !== undefined) setMusicAutoPlay(data.music_auto_play);
+
+          // Data Umum & Jarak LDR
           if (data.status_ldr) setCustomLdr(data.status_ldr);
           if (data.pesan_rahasia) setSecretNote(data.pesan_rahasia);
           if (data.latitude) setHomeLatitude(String(data.latitude));
           if (data.longitude) setHomeLongitude(String(data.longitude));
           if (data.lokasi_utama) setHomeLabel(data.lokasi_utama);
           
+          // Arsitektur Game & Media
           if (data.click_missions) setClickMissions(data.click_missions);
           if (data.scratch_notes) setScratchNotes(data.scratch_notes);
           if (data.quiz_pool) setQuizPool(data.quiz_pool);
@@ -93,7 +109,7 @@ export default function EditPage() {
   // ==========================================
 
   // Game 1: Clicker
-  const handleAddClick = () => setClickMissions([...clickMissions, { title: "Misi Klik Baru", target: 10, reward: "Hadiah Kejutan Baru", color: "from-pink-500 to-purple-500" }]);
+  const handleAddClick = () => setClickMissions([...clickMissions, { title: "Misi Klik Baru", target: 10, reward: "Hadiah Teks Baru", color: "from-pink-500 to-purple-500" }]);
   const handleUpdateClick = (i: number, key: string, val: any) => {
     const copy = [...clickMissions];
     copy[i] = { ...copy[i], [key]: val };
@@ -137,15 +153,17 @@ export default function EditPage() {
       const pool1Array = gachaPool1Input.split(",").map(item => item.trim()).filter(Boolean);
       const structuredGachaPool = [pool0Array, pool1Array];
 
-      // Ambil ID baris pertama atau lakukan upsert terpusat pada baris utama database
       const { error } = await supabase
         .from("web_config")
         .upsert({
-          id: 1, // ID Konfigurasi Tetap
+          id: 1, // Mengunci baris data tunggal utama web
+          title_web: titleWeb,
+          theme_color: themeColor,
+          music_auto_play: musicAutoPlay,
           status_ldr: customLdr,
           pesan_rahasia: secretNote,
-          latitude: parseFloat(homeLatitude) || 0,
-          longitude: parseFloat(homeLongitude) || 0,
+          latitude: parseFloat(homeLatitude) || -6.1751,
+          longitude: parseFloat(homeLongitude) || 106.8272,
           lokasi_utama: homeLabel,
           click_missions: clickMissions,
           gacha_pool: structuredGachaPool,
@@ -155,11 +173,12 @@ export default function EditPage() {
           galeri_foto: photos,
           audio_tracks: tracks,
           updated_at: new Date().toISOString()
-        });
+        })
+        .select();
 
       if (error) throw error;
 
-      alert("✨ Cloud Sync Sukses! Semua data interaktif, arsitektur game, & musik telah disimpan di Supabase.");
+      alert("✨ Cloud Sync Sukses! Semua data interaktif, arsitektur game, & musik telah disimpan di Database Baru.");
       router.push("/");
     } catch (err: any) {
       console.error(err);
@@ -170,7 +189,7 @@ export default function EditPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#05070c] flex items-center justify-center font-mono text-xs text-white/40">
-        MENGAMBIL TELEMETRI CONFIG DARI SUPABASE...
+        MENGAMBIL DATA KONFIGURASI DARI DATABASE SUPABASE...
       </div>
     );
   }
@@ -191,6 +210,28 @@ export default function EditPage() {
       </div>
 
       <div className="max-w-5xl mx-auto space-y-10">
+
+        {/* 0. SETTING METADATA & CORE APPEARANCE */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <h2 className="text-sm font-bold text-sky-400">🎨 Pengaturan Tampilan & Sistem Web</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="text-[11px] text-white/40 block mb-1">Judul Tab Browser (Title Web)</label>
+              <input type="text" value={titleWeb} onChange={(e) => setTitleWeb(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 block mb-1">Gradasi Warna (Tailwind Class)</label>
+              <input type="text" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs font-mono text-sky-300" placeholder="from-pink-500 to-purple-500" />
+            </div>
+            <div>
+              <label className="text-[11px] text-white/40 block mb-2">Autoplay Musik Saat Dibuka</label>
+              <div className="flex items-center gap-2 pt-1">
+                <input type="checkbox" id="autoplay" checked={musicAutoPlay} onChange={(e) => setMusicAutoPlay(e.target.checked)} className="w-4 h-4 rounded border-white/10 accent-pink-500 bg-black/40" />
+                <label htmlFor="autoplay" className="text-xs text-white/70 select-none">Aktifkan Autoplay</label>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* 1. KONTROL DATA STATUS & KOORDINAT RUMAH PRESISI */}
         <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
@@ -214,7 +255,7 @@ export default function EditPage() {
             </div>
           </div>
           <div className="p-3 bg-white/[0.01] border border-white/5 rounded-xl text-[11px] text-white/40">
-            💡 <span className="text-white/70 font-semibold">Info Link:</span> Sistem depan akan otomatis mengarahkan ke Google Maps dengan presisi tinggi berdasarkan titik koordinat: <a href={`http://googleusercontent.com/maps.google.com/${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-mono">{homeLatitude}, {homeLongitude}</a>
+            💡 <span className="text-white/70 font-semibold">Info Link:</span> Sistem depan akan otomatis mengarahkan ke Google Maps dengan presisi tinggi berdasarkan titik koordinat: <a href={`https://maps.google.com/?q=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-mono">{homeLatitude}, {homeLongitude}</a>
           </div>
         </section>
 
@@ -268,11 +309,11 @@ export default function EditPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
               <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 1 (Pisahkan dengan Koma)</span>
-              <input type="text" value={gachaPool0Input} onChange={(e) => setGachaPool0Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
+              <input type="text" value={gachaPool0Input} onChange={(e) => setGachaPool0Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" placeholder="Zonk, Reward A, Kosong" />
             </div>
             <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
               <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 2 (Pisahkan dengan Koma)</span>
-              <input type="text" value={gachaPool1Input} onChange={(e) => setGachaPool1Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
+              <input type="text" value={gachaPool1Input} onChange={(e) => setGachaPool1Input(e.target.value)} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" placeholder="Coba Lagi, Ditraktir Seblak, Kurang Beruntung" />
             </div>
           </div>
         </section>
@@ -280,8 +321,8 @@ export default function EditPage() {
         {/* GAME 3 - KUPON GOSOK AFEKSI */}
         <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-sm font-bold text-purple-400">✨ Game 3: Kupon Gosok Afeksi (Teks Acak)</h2>
-            <button onClick={() => setScratchNotes([...scratchNotes, "Teks kupon baru disini..."])} className="text-[11px] bg-purple-500/10 text-purple-400 px-2 py-1 rounded border border-purple-500/20">+ Tambah Kupon</button>
+            <h2 className="text-sm font-bold text-fuchsia-400">✨ Game 3: Kupon Gosok Afeksi (Teks Acak Konten)</h2>
+            <button onClick={() => setScratchNotes([...scratchNotes, "Teks kupon baru disini..."])} className="text-[11px] bg-fuchsia-500/10 text-fuchsia-400 px-2 py-1 rounded border border-fuchsia-500/20">+ Tambah Kupon</button>
           </div>
           <div className="space-y-2">
             {scratchNotes.map((note, i) => (
@@ -291,7 +332,7 @@ export default function EditPage() {
                   const copy = [...scratchNotes];
                   copy[i] = e.target.value;
                   setScratchNotes(copy);
-                }} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
+                }} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs text-fuchsia-200" />
                 <button onClick={() => setScratchNotes(scratchNotes.filter((_, idx) => idx !== i))} className="text-xs text-red-400 px-2">Hapus</button>
               </div>
             ))}
