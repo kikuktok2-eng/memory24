@@ -1,266 +1,323 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Perbaikan: Menggunakan path resmi Next.js
 
-export default function AdminPage() {
+export default function EditPage() {
   const router = useRouter();
 
-  // State Manajemen Konten Dinamis
-  const [activeTab, setActiveTab] = useState("photos");
-  const [statusText, setStatusText] = useState("In a Quiet Love Story");
-  const [statusDate, setStatusDate] = useState("Since 2024");
+  // ==========================================
+  // STATE MASTER DATA (SEMUA BISA DIEDIT)
+  // ==========================================
   
-  // State Input Form
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [photoDesc, setPhotoDesc] = useState("");
-  const [musicTitle, setMusicTitle] = useState("");
-  const [musicArtist, setMusicArtist] = useState("");
-  const [placeName, setPlaceName] = useState("");
+  // 1. Data Umum, Jarak LDR, & Koordinat Rumah Presisi
+  const [customLdr, setCustomLdr] = useState("± 780 Km Antara Kita");
+  const [secretNote, setSecretNote] = useState("Makasih banyak ya udah selalu sabar, chill, dan jadi safe place paling nyaman buat aku. I love you! ❤️");
+  const [homeLatitude, setHomeLatitude] = useState("-6.1751"); 
+  const [homeLongitude, setHomeLongitude] = useState("106.8272");
+  const [homeLabel, setHomeLabel] = useState("Rumah Kesayangan");
+
+  // 2. Game 1: Clicker Tantangan
+  const [clickMissions, setClickMissions] = useState([
+    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
+    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" }
+  ]);
+
+  // 3. Game 2: Pilihan Gacha (Tier 1 & Tier 2)
+  const [gachaPool0, setGachaPool0] = useState(["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"]);
+  const [gachaPool1, setGachaPool1] = useState(["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"]);
+
+  // 4. Game 3: Kupon Gosok Afeksi
+  const [scratchNotes, setScratchNotes] = useState([
+    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
+    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
+  ]);
+
+  // 5. Game 4: Kuis Bertingkat
+  const [quizPool, setQuizPool] = useState([
+    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 }
+  ]);
+
+  // 6. Game 5: Word Puzzle (Susun Kata)
+  const [puzzleSentences, setPuzzleSentences] = useState([
+    "Kamu,Adalah,Semesta,Paling,Indah",
+    "Mau,Bareng,Kamu,Sampai,Tua"
+  ]);
+
+  // 7. Repositori Foto Dump
+  const [photos, setPhotos] = useState([
+    { url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=600", desc: "Waktu Cari Senja" }
+  ]);
+
+  // 8. Playlist Audio Musik (Menggunakan URL Audio MP3 Langsung)
+  const [tracks, setTracks] = useState([
+    { title: "Lover", artist: "Taylor Swift", duration: "03:41", audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" }
+  ]);
+
+  // ==========================================
+  // FITUR AMBIL DATA UTAMA DARI LOCAL STORAGE
+  // ==========================================
+  useEffect(() => {
+    const loadFromStorage = (key: string, setter: Function) => {
+      const saved = localStorage.getItem(key);
+      if (saved) setter(JSON.parse(saved));
+    };
+
+    const savedLdr = localStorage.getItem("our_ldr");
+    const savedNote = localStorage.getItem("our_note");
+    const savedLat = localStorage.getItem("home_lat");
+    const savedLng = localStorage.getItem("home_lng");
+    const savedLabel = localStorage.getItem("home_label");
+
+    if (savedLdr) setCustomLdr(savedLdr);
+    if (savedNote) setSecretNote(savedNote);
+    if (savedLat) setHomeLatitude(savedLat);
+    if (savedLng) setHomeLongitude(savedLng);
+    if (savedLabel) setHomeLabel(savedLabel);
+
+    loadFromStorage("click_missions", setClickMissions);
+    loadFromStorage("gacha_pool_0", setGachaPool0);
+    loadFromStorage("gacha_pool_1", setGachaPool1);
+    loadFromStorage("scratch_notes", setScratchNotes);
+    loadFromStorage("quiz_pool", setQuizPool);
+    loadFromStorage("puzzle_sentences", setPuzzleSentences);
+    loadFromStorage("our_photos", setPhotos);
+    loadFromStorage("our_tracks", setTracks);
+  }, []);
+
+  // ==========================================
+  // FUNGSI MANIPULASI DATA (TAMBAH / EDIT / HAPUS)
+  // ==========================================
+
+  // Game 1: Clicker
+  const handleAddClick = () => setClickMissions([...clickMissions, { title: "Misi Klik Baru", target: 10, reward: "Hadiah Kejutan Baru", color: "from-pink-500 to-purple-500" }]);
+  const handleUpdateClick = (i: number, key: string, val: any) => {
+    const copy = [...clickMissions];
+    copy[i] = { ...copy[i], [key]: val };
+    setClickMissions(copy);
+  };
+
+  // Game 4: Kuis
+  const handleAddQuiz = () => setQuizPool([...quizPool, { q: "Pertanyaan Baru?", a: ["Pilihan 1", "Pilihan 2", "Pilihan 3"], c: 0 }]);
+  const handleUpdateQuiz = (i: number, key: string, val: any) => {
+    const copy = [...quizPool];
+    copy[i] = { ...copy[i], [key]: val };
+    setQuizPool(copy);
+  };
+  const handleUpdateQuizOpt = (quizIdx: number, optIdx: number, val: string) => {
+    const copy = [...quizPool];
+    copy[quizIdx].a[optIdx] = val;
+    setQuizPool(copy);
+  };
+
+  // Foto & Musik
+  const handleUpdatePhoto = (i: number, key: "url" | "desc", val: string) => {
+    const copy = [...photos];
+    copy[i][key] = val;
+    setPhotos(copy);
+  };
+  const handleUpdateTrack = (i: number, key: "title" | "artist" | "duration" | "audioUrl", val: string) => {
+    const copy = [...tracks];
+    copy[i][key] = val;
+    setTracks(copy);
+  };
+
+  // ==========================================
+  // SIMPAN SEMUA DATA KE LOCAL STORAGE
+  // ==========================================
+  const handleSaveAll = () => {
+    localStorage.setItem("our_ldr", customLdr);
+    localStorage.setItem("our_note", secretNote);
+    localStorage.setItem("home_lat", homeLatitude);
+    localStorage.setItem("home_lng", homeLongitude);
+    localStorage.setItem("home_label", homeLabel);
+    localStorage.setItem("click_missions", JSON.stringify(clickMissions));
+    localStorage.setItem("gacha_pool_0", JSON.stringify(gachaPool0));
+    localStorage.setItem("gacha_pool_1", JSON.stringify(gachaPool1));
+    localStorage.setItem("scratch_notes", JSON.stringify(scratchNotes));
+    localStorage.setItem("quiz_pool", JSON.stringify(quizPool));
+    localStorage.setItem("puzzle_sentences", JSON.stringify(puzzleSentences));
+    localStorage.setItem("our_photos", JSON.stringify(photos));
+    localStorage.setItem("our_tracks", JSON.stringify(tracks));
+
+    alert("✨ Sukses! Semua data interaktif, musik, & lokasi presisi disimpan lewat Local Storage.");
+    router.push("/");
+  };
 
   return (
-    <main className="min-h-screen bg-[#030508] text-white relative overflow-hidden font-sans antialiased">
+    <main className="min-h-screen bg-[#05070c] text-white p-6 pb-20 font-sans selection:bg-pink-500/20">
       
-      {/* BACKGROUND GRAPHICS */}
-      <div className="absolute w-[600px] h-[600px] bg-gradient-to-tr from-pink-500/10 to-transparent blur-[140px] -top-80 -left-60 pointer-events-none" />
-      <div className="absolute w-[600px] h-[600px] bg-gradient-to-bl from-purple-500/10 to-transparent blur-[140px] -bottom-80 -right-60 pointer-events-none" />
-
-      <div className="max-w-5xl mx-auto px-4 py-10 relative z-10">
-        
-        {/* TOP GLOWING BAR & HEADER */}
-        <div className="rounded-3xl p-6 bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] tracking-[0.3em] font-bold text-white/40 uppercase">Instant Live Customizer</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black mt-1 bg-gradient-to-r from-white via-white/90 to-white/50 bg-clip-text text-transparent">
-              Creative Studio.
-            </h1>
-          </div>
-          
-          <button 
-            onClick={() => router.push("/")}
-            className="group flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 font-semibold text-xs transition-all shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40 active:scale-95"
-          >
-            <span>✨ Back to Space</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </button>
+      {/* HEADER CONTROL */}
+      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-6 mb-8">
+        <div>
+          <span className="text-xs font-mono text-pink-400 tracking-widest">// SETTING PUSAT SISTEM</span>
+          <h1 className="text-2xl font-black tracking-tight mt-1">Skena Customizer & Editor Interaktif</h1>
         </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button onClick={() => router.push("/")} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs transition-all">Batal</button>
+          <button onClick={handleSaveAll} className="px-5 py-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 rounded-xl text-xs font-bold shadow-lg transition-all">💾 Simpan Permanen</button>
+        </div>
+      </div>
 
-        {/* INTERACTIVE CONTROLS CONTAINER */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* LEFT SIDE: UNIFIED NAVIGATION TABS */}
-          <div className="lg:col-span-4 space-y-2">
-            <p className="text-[10px] uppercase tracking-widest text-white/30 px-3 font-bold mb-3">Navigation</p>
-            {[
-              { id: "photos", label: "Visual Archive", icon: "📸", color: "hover:text-pink-400" },
-              { id: "music", label: "Soundtrack", icon: "🎵", color: "hover:text-purple-400" },
-              { id: "status", label: "Timeline Status", icon: "❤️", color: "hover:text-blue-400" },
-              { id: "places", label: "Pinned Places", icon: "📍", color: "hover:text-emerald-400" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full p-4 rounded-2xl border text-left text-sm font-medium transition-all flex items-center justify-between ${
-                  activeTab === tab.id
-                    ? "bg-white/5 border-white/20 text-white shadow-xl shadow-black/40 pl-6"
-                    : "bg-transparent border-transparent text-white/40 " + tab.color
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-base">{tab.icon}</span>
-                  <span>{tab.label}</span>
+      <div className="max-w-5xl mx-auto space-y-10">
+
+        {/* 1. KONTROL DATA STATUS & KOORDINAT RUMAH PRESISI */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <h2 className="text-sm font-bold text-pink-400">📍 Status Umum & Lokasi Maps Presisi</h2>
+          <div className="grid gap-4 sm:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label className="text-[11px] text-white/40 block mb-1">Status Teks Hari / Jarak LDR</label>
+              <input type="text" value={customLdr} onChange={(e) => setCustomLdr(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[11px] text-white/40 block mb-1">Label Lokasi Utama</label>
+              <input type="text" value={homeLabel} onChange={(e) => setHomeLabel(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" placeholder="Misal: Rumah Kesayangan" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[11px] text-white/40 block mb-1">Garis Lintang Rumah (Latitude)</label>
+              <input type="text" value={homeLatitude} onChange={(e) => setHomeLatitude(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs font-mono text-emerald-400" placeholder="-6.1751" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[11px] text-white/40 block mb-1">Garis Bujur Rumah (Longitude)</label>
+              <input type="text" value={homeLongitude} onChange={(e) => setHomeLongitude(e.target.value)} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs font-mono text-emerald-400" placeholder="106.8272" />
+            </div>
+          </div>
+          <div className="p-3 bg-white/[0.01] border border-white/5 rounded-xl text-[11px] text-white/40">
+            💡 <span className="text-white/70 font-semibold">Info Link:</span> Sistem depan akan otomatis mengarahkan ke Google Maps dengan presisi tinggi berdasarkan titik koordinat: <a href={`https://www.google.com/maps/search/?api=1&query=${homeLatitude},${homeLongitude}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-mono">{homeLatitude}, {homeLongitude}</a>
+          </div>
+        </section>
+
+        {/* 2. AUDIO & PLAYLIST MUSIK */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-purple-400">🎵 Audio Core Soundtrack (Bisa Putar Lagu)</h2>
+            <button onClick={() => setTracks([...tracks, { title: "", artist: "", duration: "03:00", audioUrl: "" }])} className="text-[11px] bg-purple-500/10 text-purple-400 px-2 py-1 rounded border border-purple-500/20">+ Tambah File Musik</button>
+          </div>
+          <div className="space-y-3">
+            {tracks.map((t, i) => (
+              <div key={i} className="p-4 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between text-[10px] text-white/30"><span>TRACK AUDIO 0{i+1}</span><button onClick={() => setTracks(tracks.filter((_, idx) => idx !== i))} className="text-red-400">Hapus Musik</button></div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <input type="text" value={t.title} onChange={(e) => handleUpdateTrack(i, "title", e.target.value)} placeholder="Judul Lagu" className="w-full p-2 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={t.artist} onChange={(e) => handleUpdateTrack(i, "artist", e.target.value)} placeholder="Penyanyi / Artis" className="w-full p-2 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={t.duration} onChange={(e) => handleUpdateTrack(i, "duration", e.target.value)} placeholder="Durasi Teks (Menit:Detik)" className="w-full p-2 bg-white/5 rounded border border-white/10" />
                 </div>
-                {activeTab === tab.id && (
-                  <motion.div layoutId="dot" className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-                )}
-              </button>
+                <div>
+                  <label className="text-[10px] text-white/40 block mb-0.5">Link Direct File Audio (.mp3)</label>
+                  <input type="text" value={t.audioUrl} onChange={(e) => handleUpdateTrack(i, "audioUrl", e.target.value)} placeholder="https://domain.com/lagu-kamu.mp3" className="w-full p-2 bg-white/5 rounded border border-white/10 font-mono text-purple-300" />
+                </div>
+              </div>
             ))}
           </div>
+        </section>
 
-          {/* RIGHT SIDE: GLASSMORPHIC EDIT PANEL */}
-          <div className="lg:col-span-8">
-            <div className="min-h-[400px] rounded-3xl border border-white/[0.08] bg-white/[0.01] backdrop-blur-xl p-6 md:p-8 relative">
-              <AnimatePresence mode="wait">
-                
-                {/* FORM EDIT FOTO */}
-                {activeTab === "photos" && (
-                  <motion.div
-                    key="photos"
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    className="space-y-6"
-                  >
-                    <div className="border-b border-white/5 pb-3">
-                      <h3 className="text-base font-bold text-pink-400">Add Image Memory</h3>
-                      <p className="text-xs text-white/40">Inject images to your curated memory cluster.</p>
-                    </div>
+        {/* 3. GAME 1 - CLICKER */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-amber-400">🕹️ Game 1: Misi Klik Beruntun (Clicker)</h2>
+            <button onClick={handleAddClick} className="text-[11px] bg-amber-500/10 text-amber-400 px-2 py-1 rounded border border-amber-500/20">+ Tambah Tantangan</button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {clickMissions.map((m, i) => (
+              <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between text-[10px] text-white/30"><span>LEVEL MISI 0{i+1}</span><button onClick={() => setClickMissions(clickMissions.filter((_, idx) => idx !== i))} className="text-red-400">Hapus</button></div>
+                <input type="text" value={m.title} onChange={(e) => handleUpdateClick(i, "title", e.target.value)} placeholder="Judul misi/tantangan" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" value={m.target} onChange={(e) => handleUpdateClick(i, "target", parseInt(e.target.value) || 10)} placeholder="Target Klik" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                  <input type="text" value={m.reward} onChange={(e) => handleUpdateClick(i, "reward", e.target.value)} placeholder="Reward/Hadiah Teks" className="w-full p-1.5 bg-white/5 rounded border border-white/10" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Secure Image Address (URL)</label>
-                        <input 
-                          type="text"
-                          placeholder="https://images.unsplash.com/your-image-id..."
-                          className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-pink-500 transition-all text-white/80 font-mono"
-                          value={photoUrl}
-                          onChange={(e) => setPhotoUrl(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Story Caption</label>
-                        <input 
-                          type="text"
-                          placeholder="Describe this exact frame..."
-                          className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-pink-500 transition-all text-white/80"
-                          value={photoDesc}
-                          onChange={(e) => setPhotoDesc(e.target.value)}
-                        />
-                      </div>
-                      <button 
-                        onClick={() => alert("Photo mapped to grid!")}
-                        className="w-full bg-pink-500 hover:bg-pink-600 font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-pink-500/20 active:scale-[0.99]"
-                      >
-                        Push Image to Live Grid
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* FORM EDIT MUSIK */}
-                {activeTab === "music" && (
-                  <motion.div
-                    key="music"
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    className="space-y-6"
-                  >
-                    <div className="border-b border-white/5 pb-3">
-                      <h3 className="text-base font-bold text-purple-400">Append Soundtrack</h3>
-                      <p className="text-xs text-white/40">Queue a new favorite song to the interface.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Track Title</label>
-                          <input 
-                            type="text"
-                            placeholder="e.g., Lover"
-                            className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-purple-500 transition-all text-white/80"
-                            value={musicTitle}
-                            onChange={(e) => setMusicTitle(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Artist name</label>
-                          <input 
-                            type="text"
-                            placeholder="e.g., Taylor Swift"
-                            className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-purple-500 transition-all text-white/80"
-                            value={musicArtist}
-                            onChange={(e) => setMusicArtist(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => alert("Track attached!")}
-                        className="w-full bg-purple-500 hover:bg-purple-600 font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-purple-500/20 active:scale-[0.99]"
-                      >
-                        Insert Track Into Space
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* FORM EDIT TIMELINE STATUS */}
-                {activeTab === "status" && (
-                  <motion.div
-                    key="status"
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    className="space-y-6"
-                  >
-                    <div className="border-b border-white/5 pb-3">
-                      <h3 className="text-base font-bold text-blue-400">Timeline / Anniversary Info</h3>
-                      <p className="text-xs text-white/40">Alter status indicators instantly.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Status Phrase</label>
-                        <input 
-                          type="text"
-                          className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all text-white/80"
-                          value={statusText}
-                          onChange={(e) => setStatusText(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Anniversary Description</label>
-                        <input 
-                          type="text"
-                          className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition-all text-white/80"
-                          value={statusDate}
-                          onChange={(e) => setStatusDate(e.target.value)}
-                        />
-                      </div>
-                      <button 
-                        onClick={() => alert("Relationship variables updated!")}
-                        className="w-full bg-blue-500 hover:bg-blue-600 font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-[0.99]"
-                      >
-                        Apply Status Update
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* FORM EDIT TEMPAT */}
-                {activeTab === "places" && (
-                  <motion.div
-                    key="places"
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    className="space-y-6"
-                  >
-                    <div className="border-b border-white/5 pb-3">
-                      <h3 className="text-base font-bold text-emerald-400">Pin Visited Spots</h3>
-                      <p className="text-xs text-white/40">Pin locations you have conquered together.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] uppercase tracking-widest text-white/40 block mb-1.5 font-semibold">Spot Location Name</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g., Sunset Beach"
-                          className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-xs focus:outline-none focus:border-emerald-500 transition-all text-white/80"
-                          value={placeName}
-                          onChange={(e) => setPlaceName(e.target.value)}
-                        />
-                      </div>
-                      <button 
-                        onClick={() => alert("Spot pinned permanently!")}
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.99]"
-                      >
-                        Drop Pin on Coordinates
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
+        {/* 4. GAME 2 - GACHA ITEMS */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <h2 className="text-sm font-bold text-blue-400">🎰 Game 2: Kolam Hadiah Spin Gacha</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
+              <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 1 (Pisahkan dengan Koma)</span>
+              <input type="text" value={gachaPool0.join(",")} onChange={(e) => setGachaPool0(e.target.value.split(","))} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
+            </div>
+            <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1">
+              <span className="text-[11px] text-blue-400 font-mono block">GACHA TIER 2 (Pisahkan dengan Koma)</span>
+              <input type="text" value={gachaPool1.join(",")} onChange={(e) => setGachaPool1(e.target.value.split(","))} className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-mono" />
             </div>
           </div>
+        </section>
 
-        </div>
+        {/* 5. GAME 4 - KUIS BERTINGKAT */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-emerald-400">🧩 Game 4: Kuis Pengetahuan Romantis</h2>
+            <button onClick={handleAddQuiz} className="text-[11px] bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20">+ Tambah Soal Kuis</button>
+          </div>
+          <div className="space-y-4">
+            {quizPool.map((q, qIdx) => (
+              <div key={qIdx} className="p-4 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between items-center"><span className="font-mono text-emerald-400">PERTANYAAN STAGE {qIdx+1}</span><button onClick={() => setQuizPool(quizPool.filter((_, idx) => idx !== qIdx))} className="text-red-400">Hapus Soal</button></div>
+                <input type="text" value={q.q} onChange={(e) => handleUpdateQuiz(qIdx, "q", e.target.value)} placeholder="Teks Pertanyaan" className="w-full p-2 bg-white/5 border border-white/10 rounded text-xs font-semibold" />
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {q.a.map((opt, optIdx) => (
+                    <div key={optIdx} className="space-y-1">
+                      <label className="text-[10px] text-white/30">Pilihan {optIdx+1}</label>
+                      <input type="text" value={opt} onChange={(e) => handleUpdateQuizOpt(qIdx, optIdx, e.target.value)} className="w-full p-1.5 bg-white/5 border border-white/10 rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-1">
+                  <label className="text-[10px] text-amber-400 block mb-1">Index Pilihan Benar (Isi 0 untuk Pilihan 1, Isi 1 untuk Pilihan 2, Isi 2 untuk Pilihan 3)</label>
+                  <input type="number" min={0} max={2} value={q.c} onChange={(e) => handleUpdateQuiz(qIdx, "c", parseInt(e.target.value) || 0)} className="w-16 p-1 bg-white/10 border border-white/20 rounded font-mono text-center" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 6. GAME 5 - SUSUN KATA (PUZZLE) */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-cyan-400">✍️ Game 5: Love Scrambler (Susun Rangkaian Kata)</h2>
+            <button onClick={() => setPuzzleSentences([...puzzleSentences, "Kita,Selamanya,Bersama"])} className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded border border-cyan-500/20">+ Tambah Kalimat Baru</button>
+          </div>
+          <p className="text-[11px] text-white/30 leading-none">*Format wajib dipisah tanda koma tanpa spasi agar mesin pengacak bekerja sempurna.</p>
+          <div className="space-y-2">
+            {puzzleSentences.map((sentence, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <span className="text-xs text-white/30 font-mono">0{i+1}</span>
+                <input type="text" value={sentence} onChange={(e) => {
+                  const copy = [...puzzleSentences];
+                  copy[i] = e.target.value;
+                  setPuzzleSentences(copy);
+                }} className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs font-mono text-cyan-300" />
+                <button onClick={() => setPuzzleSentences(puzzleSentences.filter((_, idx) => idx !== i))} className="text-xs text-red-400 px-2">Hapus</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 7. KONTROL FOTO MEMORI DUMP */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-sm font-bold text-white">📸 Galeri Foto Dump & Core Memories</h2>
+            <button onClick={() => setPhotos([...photos, { url: "", desc: "" }])} className="text-[10px] text-white/50 border border-white/20 px-2 py-0.5 rounded">+ Tambah Slot Foto</button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {photos.map((p, i) => (
+              <div key={i} className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1.5 text-xs">
+                <input type="text" value={p.url} onChange={(e) => handleUpdatePhoto(i, "url", e.target.value)} placeholder="Link URL Gambar Unsplash / Pin" className="w-full p-1.5 bg-white/5 rounded text-[11px] font-mono text-white/60" />
+                <input type="text" value={p.desc} onChange={(e) => handleUpdatePhoto(i, "desc", e.target.value)} placeholder="Keterangan Kenangan Foto Ini" className="w-full p-1.5 bg-white/5 rounded text-[11px]" />
+                <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))} className="text-[10px] text-red-400 block pt-0.5">Hapus Slot Gambar</button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* SURAT CINTA UTAMA */}
+        <section className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-2">
+          <label className="text-xs font-bold text-pink-400 block">🔒 Pesan Rahasia Terenkripsi Utama (Locker Note)</label>
+          <textarea value={secretNote} onChange={(e) => setSecretNote(e.target.value)} rows={3} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-xs text-white/80 focus:outline-none font-mono resize-none leading-relaxed" placeholder="Tulis ungkapan perasaan hati kalian di sini..." />
+        </section>
 
       </div>
     </main>
