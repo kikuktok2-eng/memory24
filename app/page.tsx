@@ -14,25 +14,57 @@ export default function Home() {
   const [partnerMood, setPartnerMood] = useState("Vibe: Butuh Deep Talk");
 
   // ==========================================
-  // STATE UNTUK 5 MINI GAMES
+  // STATE & DATABASE UTK GAME DINAMIS (GONTA-GANTI)
   // ==========================================
-  // Game 1: Clicker
-  const [loveClicks, setLoveClicks] = useState(0);
-  // Game 2: Shell Game (Tebak Hati)
-  const [shellResult, setShellResult] = useState<string | null>(null);
+  
+  // Game 1: Clicker Tantangan (Misi Ganti-Ganti)
+  const [clickStage, setClickStage] = useState(0);
+  const [clickCount, setClickCount] = useState(0);
+  const clickMissions = [
+    { title: "Kirim Energi Kangen Brutal", target: 10, reward: "🔋 Sinyal Kangen Terkirim!", color: "from-pink-500 to-purple-500" },
+    { title: "Nabung Peluk Online", target: 15, reward: "🤗 Slot Peluk Ditambahkan!", color: "from-purple-500 to-indigo-500" },
+    { title: "Semburin Salting Level Max", target: 20, reward: "🔥 Doi Sukses Bikin Salting!", color: "from-amber-500 to-red-500" }
+  ];
+
+  // Game 2: Gacha Kotak Misteri (Hadiah Ganti-Ganti)
+  const [gachaStage, setGachaStage] = useState(0);
+  const [gachaResult, setGachaResult] = useState<string | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
-  // Game 3: Scratch Coupon
+  const gachaPool = [
+    ["💔 Zonk", "❤️ Bonus Pap Cantik", "💔 Kosong"],
+    ["💔 Coba Lagi", "🍿 Ditraktir Seblak Next Date", "💔 Kurang Beruntung"],
+    ["💔 Lewat", "✨ Free Deep Talk Semalaman", "💔 Kosong"]
+  ];
+
+  // Game 3: Kupon Gosok Afeksi (Teks Ganti-Ganti)
+  const [scratchStage, setScratchStage] = useState(0);
   const [isScratched, setIsScratched] = useState(false);
-  // Game 4: Quiz
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [quizScore, setQuizScore] = useState(0);
+  const scratchNotes = [
+    "Hari ini kamu cakep banget, jangan lupa makan ya sayang! 🥰",
+    "Makasih ya udah bertahan sama aku sejauh ini. Proud of you! 💖",
+    "Semesta itu luas, tapi buat aku pusatnya tetep di kamu. 🌌"
+  ];
+
+  // Game 4: Kuis Bertingkat (Soal Berubah Terus)
+  const [quizStage, setQuizStage] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
-  // Game 5: Word Puzzle
+  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
+  const quizPool = [
+    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 },
+    { q: "Kalo aku tiba-tiba ngilang, artinya aku lagi...", a: ["Tidur Pulas", "Ngambek Butuh Dibujuk", "Main Game"], c: 1 },
+    { q: "Apa hal kecil dari kamu yang paling bikin aku candu?", a: ["Wanginya", "Ketawa Randomnya", "Pas Lagi Manja"], c: 1 }
+  ];
+
+  // Game 5: Word Puzzle (Kalimat Berganti)
+  const [puzzleStage, setPuzzleStage] = useState(0);
   const [shuffledWords, setShuffledWords] = useState<string[]>([]);
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [puzzleWin, setPuzzleWin] = useState(false);
-
-  const correctSentence = ["Kamu", "Adalah", "Semesta", "Paling", "Indah"];
+  const puzzleSentences = [
+    ["Kamu", "Adalah", "Semesta", "Paling", "Indah"],
+    ["Mau", "Bareng", "Kamu", "Sampai", "Tua"],
+    ["Rindu", "Ini", "Curang", "Nambah", "Terus"]
+  ];
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
@@ -41,8 +73,8 @@ export default function Home() {
     const difference = today.getTime() - startDate.getTime();
     setDaysTogether(Math.floor(difference / (1000 * 60 * 60 * 24)));
 
-    // Init Word Puzzle Acak
-    setShuffledWords([...correctSentence].sort(() => Math.random() - 0.5));
+    // Init Puzzle Stage 0
+    initPuzzle(0);
 
     return () => clearTimeout(timer);
   }, []);
@@ -58,52 +90,80 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [activeTrack]);
 
-  // Handler Game 2: Tebak Hati
-  const playShellGame = () => {
+  // HELPER INTERAKTIF
+  const initPuzzle = (stageIdx: number) => {
+    setSelectedWords([]);
+    setPuzzleWin(false);
+    setShuffledWords([...puzzleSentences[stageIdx]].sort(() => Math.random() - 0.5));
+  };
+
+  const handleClicker = () => {
+    const currentMission = clickMissions[clickStage];
+    if (clickCount + 1 >= currentMission.target) {
+      setClickCount(currentMission.target);
+      setTimeout(() => {
+        setClickStage((prev) => (prev + 1) % clickMissions.length);
+        setClickCount(0);
+      }, 1000);
+    } else {
+      setClickCount(prev => prev + 1);
+    }
+  };
+
+  const playGacha = () => {
     setIsShuffling(true);
-    setShellResult(null);
+    setGachaResult(null);
     setTimeout(() => {
       setIsShuffling(false);
-      const items = ["💔 Kosong", "❤️ Bonus Peluk!", "💔 Zonk"];
-      setShellResult(items[Math.floor(Math.random() * items.length)]);
+      const currentPool = gachaPool[gachaStage];
+      const winResult = currentPool[Math.floor(Math.random() * currentPool.length)];
+      setGachaResult(winResult);
+      
+      // Jika menang (bukan zonk/kosong), naikkan level gacha pool berikutnya
+      if (!winResult.includes("💔")) {
+        setTimeout(() => {
+          setGachaStage((prev) => (prev + 1) % gachaPool.length);
+          setGachaResult(null);
+        }, 1500);
+      }
     }, 800);
   };
 
-  // Handler Game 4: Kuis
-  const quizData = [
-    { q: "Mana date spot yang paling core kita banget?", a: ["Ngopi Senja", "MCD 24 Jam", "Deep Talk Motoran"], c: 2 },
-    { q: "Siapa yang paling sering ngambek gak jelas?", a: ["Aku", "Kamu", "Dua-duanya sama"], c: 1 },
-    { q: "Apa love language utama aku ke kamu?", a: ["Words of Affirmation", "Physical Touch", "Acts of Service"], c: 0 }
-  ];
-
-  const handleQuizAnswer = (index: number) => {
-    if (index === quizData[currentQuestion].c) {
-      setQuizScore(quizScore + 1);
-    }
-    if (currentQuestion + 1 < quizData.length) {
-      setCurrentQuestion(currentQuestion + 1);
+  const handleQuiz = (idx: number) => {
+    if (idx === quizPool[quizStage].c) {
+      setQuizFeedback("✨ Bener Banget! Lanjut level berikutnya...");
+      setTimeout(() => {
+        setQuizFeedback(null);
+        if (quizStage + 1 < quizPool.length) {
+          setQuizStage(quizStage + 1);
+        } else {
+          setQuizFinished(true);
+        }
+      }, 1200);
     } else {
-      setQuizFinished(true);
+      setQuizFeedback("❌ Duh salah, coba tebak lagi deh!");
     }
   };
 
-  // Handler Game 5: Puzzle Kata
   const handleWordClick = (word: string, index: number) => {
-    const updatedSelected = [...selectedWords, word];
-    setSelectedWords(updatedSelected);
+    const updated = [...selectedWords, word];
+    setSelectedWords(updated);
     setShuffledWords(shuffledWords.filter((_, i) => i !== index));
 
-    if (updatedSelected.length === correctSentence.length) {
-      if (JSON.stringify(updatedSelected) === JSON.stringify(correctSentence)) {
+    if (updated.length === puzzleSentences[puzzleStage].length) {
+      if (JSON.stringify(updated) === JSON.stringify(puzzleSentences[puzzleStage])) {
         setPuzzleWin(true);
+        setTimeout(() => {
+          const nextStage = (puzzleStage + 1) % puzzleSentences.length;
+          setPuzzleStage(nextStage);
+          initPuzzle(nextStage);
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          initPuzzle(puzzleStage);
+        }, 1000);
       }
     }
-  };
-
-  const resetPuzzle = () => {
-    setSelectedWords([]);
-    setShuffledWords([...correctSentence].sort(() => Math.random() - 0.5));
-    setPuzzleWin(false);
   };
 
   const moodList = ["Vibe: Lagi Kangen Berat", "Vibe: Butuh Deep Talk", "Vibe: Pengen Ketemu", "Vibe: Salting Brutal", "Vibe: Safe Place Kamu"];
@@ -125,136 +185,156 @@ export default function Home() {
       {/* HERO SECTION */}
       <section className="h-screen flex flex-col items-center justify-center text-center px-6 relative z-10">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }} className="space-y-4">
-          <span className="text-xs font-bold uppercase tracking-[0.3em] bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Our Tiny Universe // Edisi Skena Arcade</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Our Tiny Universe // Edisi Skena Arcade Leveling</span>
           <h1 className="text-5xl md:text-8xl font-extrabold tracking-tighter bg-gradient-to-b from-white via-white/90 to-white/40 bg-clip-text text-transparent drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">Us Against The World.</h1>
-          <p className="text-white/40 mt-4 text-sm md:text-base max-w-md mx-auto font-light leading-relaxed">Tempat rahasia buat nyimpen semua tawa kita, lengkap dengan playground mini biar kita ga bosen pas lagi LDR-an.</p>
+          <p className="text-white/40 mt-4 text-sm md:text-base max-w-md mx-auto font-light leading-relaxed">Selesaikan setiap misi buat ngebuka level selanjutnya. Kuis, gacha, dan kata-katanya bakal ganti otomatis biar ga bosen!</p>
         </motion.div>
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}>
-          <span className="text-[10px] uppercase tracking-widest text-white/30">Scroll Buat Main Game</span>
+          <span className="text-[10px] uppercase tracking-widest text-white/30">Scroll Buat Main Game Misi</span>
           <div className="w-[1px] h-12 bg-gradient-to-b from-white/50 to-transparent" />
         </div>
       </section>
 
       {/* ==========================================
-          SEKSI UTAMA: PLAYGROUND MINI GAMES (TIKTOK VIBE)
+          DYNAMIC ARCENE ZONE (MISI BERUBAH-UBAH)
           ========================================== */}
-      <Section title="🕹️ Skena Arcade Zone (Anti Gabut)">
+      <Section title="🕹️ Skena Arcade Zone (Misi Ganti Otomatis)">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 [perspective:1000px]">
           
-          {/* GAME 1: LOVE COMPATIBILITY CLICKER */}
-          <Card className="p-5 flex flex-col justify-between min-h-[220px]">
+          {/* GAME 1: CLICKER TANTANGAN DYNAMIC */}
+          <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
-              <span className="text-pink-400 text-[10px] font-mono uppercase tracking-wider">Game 01 // Kangen Booster</span>
-              <h3 className="text-sm font-bold mt-1 text-white">Love Compatibility Clicker</h3>
-              <p className="text-[11px] text-white/40 mt-1">Klik tombol hati di bawah buat transfer kangen kamu secara brutal!</p>
+              <div className="flex justify-between items-center">
+                <span className="text-pink-400 text-[10px] font-mono uppercase tracking-wider">Misi Ke-0{clickStage + 1}</span>
+                <span className="text-[9px] bg-pink-500/20 text-pink-400 px-1.5 py-0.5 rounded font-mono font-bold animate-pulse">LIVE STAGE</span>
+              </div>
+              <h3 className="text-sm font-bold mt-1 text-white">{clickMissions[clickStage].title}</h3>
+              <p className="text-[11px] text-white/40 mt-1">Spam klik tombol di bawah sampai target terpenuhi buat klaim *reward*.</p>
             </div>
-            <div className="my-3 text-center">
-              <span className="text-3xl font-black block text-pink-500">{loveClicks * 10}%</span>
+            <div className="my-2 text-center">
+              <span className="text-2xl font-black block text-pink-500 font-mono">
+                {clickCount} / {clickMissions[clickStage].target}
+              </span>
               <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-                <div className="h-full bg-pink-500 transition-all duration-200" style={{ width: `${Math.min(loveClicks * 10, 100)}%` }} />
+                <div className={`h-full bg-gradient-to-r ${clickMissions[clickStage].color} transition-all duration-150`} style={{ width: `${(clickCount / clickMissions[clickStage].target) * 100}%` }} />
               </div>
             </div>
-            <button onClick={() => setLoveClicks(prev => prev >= 10 ? 0 : prev + 1)} className="w-full py-1.5 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
-              {loveClicks >= 10 ? "Reset Energi Cinta" : "⚡ SEND LOVE ATTACK"}
+            <button onClick={handleClicker} className="w-full py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
+              {clickCount === clickMissions[clickStage].target ? "🎉 MISI CLEAR! LOADING..." : "⚡ TAP / SPAM DISINI"}
             </button>
           </Card>
 
-          {/* GAME 2: LOVE LANGUAGE SHELL GAME */}
-          <Card className="p-5 flex flex-col justify-between min-h-[220px]">
+          {/* GAME 2: GACHA REWARD LEVELING */}
+          <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
-              <span className="text-blue-400 text-[10px] font-mono uppercase tracking-wider">Game 02 // Tebak Hati</span>
-              <h3 className="text-sm font-bold mt-1 text-white">Gacha Keberuntungan Cinta</h3>
-              <p className="text-[11px] text-white/40 mt-1">Cari kartu yang isinya "❤️ Bonus Peluk" di antara zonk.</p>
+              <div className="flex justify-between items-center">
+                <span className="text-blue-400 text-[10px] font-mono uppercase tracking-wider">Pool Tier-0{gachaStage + 1}</span>
+                {gachaStage > 0 && <span className="text-[9px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono font-bold">UPGRADED</span>}
+              </div>
+              <h3 className="text-sm font-bold mt-1 text-white">Gacha Keberuntungan Skena</h3>
+              <p className="text-[11px] text-white/40 mt-1">Dapet hadiah romantis? Pool gacha bakal naik tier otomatis kalau kamu menang.</p>
             </div>
             <div className="text-center my-2 h-10 flex items-center justify-center">
               {isShuffling ? (
-                <span className="text-xs text-white/50 animate-pulse font-mono">Mengacak Semesta...</span>
-              ) : shellResult ? (
-                <span className="text-sm font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">{shellResult}</span>
+                <span className="text-xs text-white/50 animate-pulse font-mono">Mengocok Hadiah Baru...</span>
+              ) : gachaResult ? (
+                <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-lg">{gachaResult}</span>
               ) : (
-                <span className="text-xs text-white/30 italic">Tiga opsi misterius menantimu</span>
+                <span className="text-xs text-white/30 italic">Coba test hoki cinta kamu hari ini</span>
               )}
             </div>
-            <button onClick={playShellGame} disabled={isShuffling} className="w-full py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
-              🎰 BUKA KOTAK MISTERI
+            <button onClick={playGacha} disabled={isShuffling} className="w-full py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium font-mono transition-colors">
+              🎰 SPIN GACHA SEKARANG
             </button>
           </Card>
 
-          {/* GAME 3: DAILY AFFIRMATION SCRATCH */}
-          <Card className="p-5 flex flex-col justify-between min-h-[220px]">
+          {/* GAME 3: KUPON GOSOK SHIFTING */}
+          <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
-              <span className="text-purple-400 text-[10px] font-mono uppercase tracking-wider">Game 03 // Gosok Kupon</span>
-              <h3 className="text-sm font-bold mt-1 text-white">Affirmation Core Card</h3>
-              <p className="text-[11px] text-white/40 mt-1">Gosok/klik lapisan abu-abu di bawah buat klaim afeksi manis hari ini.</p>
+              <div className="flex justify-between items-center">
+                <span className="text-purple-400 text-[10px] font-mono uppercase tracking-wider">Tiket Berubah Ke-0{scratchStage + 1}</span>
+              </div>
+              <h3 className="text-sm font-bold mt-1 text-white">Daily Affirmation Card</h3>
+              <p className="text-[11px] text-white/40 mt-1">Gosok lapisan penutup. Klik ganti kupon setelah dibaca buat dapet teks baru.</p>
             </div>
-            <div className="my-3 relative h-12 rounded-lg border border-white/5 overflow-hidden flex items-center justify-center bg-white/[0.02]">
-              <span className="text-[11px] font-mono text-center px-2 text-purple-300">"Hari ini kamu cakep banget, jangan lupa makan ya sayang!"</span>
+            <div className="my-2 relative h-14 rounded-lg border border-white/5 overflow-hidden flex items-center justify-center bg-white/[0.02]">
+              <span className="text-[11px] font-mono text-center px-3 text-purple-300">{scratchNotes[scratchStage]}</span>
               {!isScratched && (
-                <motion.div onClick={() => setIsScratched(true)} className="absolute inset-0 bg-neutral-700 hover:bg-neutral-600 flex items-center justify-center text-[11px] text-white/40 font-mono cursor-pointer transition-colors select-none">
-                  ░ GOSOK DI SINI ░
-                </motion.div>
+                <div onClick={() => setIsScratched(true)} className="absolute inset-0 bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-white/40 font-mono cursor-pointer transition-colors select-none">
+                  ░ KLIK / GOSOK LAPISAN ░
+                </div>
               )}
             </div>
             {isScratched && (
-              <button onClick={() => setIsScratched(false)} className="text-[10px] text-white/30 underline text-center block font-mono">Tutup Kupon Lagi</button>
+              <button onClick={() => { setIsScratched(false); setScratchStage((prev) => (prev + 1) % scratchNotes.length); }} className="w-full py-1 text-center block font-mono text-[10px] text-purple-400/80 bg-purple-500/5 rounded hover:bg-purple-500/10 border border-purple-500/10 transition-colors">
+                ✨ KLAIM & GANTI KUPON BARU
+              </button>
             )}
           </Card>
 
-          {/* GAME 4: RELATIONSHIP QUIZ */}
-          <Card className="p-5 flex flex-col justify-between min-h-[220px] md:col-span-1 lg:col-span-1">
+          {/* GAME 4: TRIVIA QUIZ BERTINGKAT */}
+          <Card className="p-5 flex flex-col justify-between min-h-[230px]">
             <div>
-              <span className="text-amber-400 text-[10px] font-mono uppercase tracking-wider">Game 04 // Uji Seberapa Kenal</span>
-              <h3 className="text-sm font-bold mt-1 text-white">Kuis Core Hubungan kita</h3>
+              <span className="text-amber-400 text-[10px] font-mono uppercase tracking-wider">Kuis Stage 0{quizStage + 1} / 03</span>
+              <h3 className="text-sm font-bold mt-1 text-white">Seberapa Kenal Kamu?</h3>
             </div>
-            <div className="my-2">
+            <div className="my-2 min-h-[90px] flex flex-col justify-center">
               {!quizFinished ? (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-white/70 font-medium truncate">{quizData[currentQuestion].q}</p>
-                  <div className="grid grid-cols-1 gap-1">
-                    {quizData[currentQuestion].a.map((opt, idx) => (
-                      <button key={idx} onClick={() => handleQuizAnswer(idx)} className="text-left text-[10px] p-1.5 bg-white/[0.02] border border-white/5 rounded hover:bg-white/5 text-white/80 transition-colors truncate">
-                        {idx + 1}. {opt}
-                      </button>
-                    ))}
-                  </div>
+                  <p className="text-[11px] text-white/80 font-medium leading-tight">{quizPool[quizStage].q}</p>
+                  {quizFeedback ? (
+                    <p className="text-[10px] text-amber-400 font-mono bg-amber-500/5 p-1 rounded border border-amber-500/10 text-center">{quizFeedback}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-1">
+                      {quizPool[quizStage].a.map((opt, idx) => (
+                        <button key={idx} onClick={() => handleQuiz(idx)} className="text-left text-[10px] p-1.5 bg-white/[0.02] border border-white/5 rounded hover:bg-white/5 text-white/70 transition-colors truncate">
+                          {idx + 1}. {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-center py-1">
-                  <p className="text-xs text-emerald-400 font-bold">Skor Kamu: {quizScore}/{quizData.length} Cocok!</p>
-                  <button onClick={() => { setCurrentQuestion(0); setQuizScore(0); setQuizFinished(false); }} className="text-[10px] text-white/40 underline font-mono mt-1">Ulangi Kuis</button>
+                <div className="text-center">
+                  <p className="text-xs text-emerald-400 font-bold">🎉 Semua Kuis Dilibas Abis!</p>
+                  <p className="text-[10px] text-white/40 mt-1">Kamu emang beneran paham luar dalem tentang aku.</p>
+                  <button onClick={() => { setQuizStage(0); setQuizFinished(false); }} className="text-[10px] text-amber-400 underline font-mono mt-2 block mx-auto">Reset Sesi Kuis</button>
                 </div>
               )}
             </div>
-            <span className="text-[9px] text-white/30 font-mono uppercase">Database Pertanyaan Romantis</span>
+            <span className="text-[9px] text-white/20 font-mono">AUTOMATIC LEVEL PROGRESSION</span>
           </Card>
 
-          {/* GAME 5: LOVE LETTER WORD PUZZLE */}
-          <Card className="p-5 flex flex-col justify-between min-h-[220px] md:col-span-2">
+          {/* GAME 5: WORD SCRAMBLER PUZZLE (LEBAR 2 KOLOM) */}
+          <Card className="p-5 flex flex-col justify-between min-h-[230px] md:col-span-2">
             <div>
-              <span className="text-emerald-400 text-[10px] font-mono uppercase tracking-wider">Game 05 // Susun Surat Cinta</span>
-              <h3 className="text-sm font-bold mt-1 text-white">Love Word Scrambler</h3>
-              <p className="text-[11px] text-white/40 mt-1">Urutin kata-kata acak di bawah biar jadi kalimat afeksi utuh.</p>
+              <div className="flex justify-between items-center">
+                <span className="text-emerald-400 text-[10px] font-mono uppercase tracking-wider">Kalimat Era Ke-0{puzzleStage + 1}</span>
+                <span className="text-[9px] text-white/30 font-mono">Auto-shuffling</span>
+              </div>
+              <h3 className="text-sm font-bold mt-1 text-white">Love Word Scrambler System</h3>
+              <p className="text-[11px] text-white/40 mt-1">Urutin rangkaian kata di bawah. Sukses menyusun bakal langsung ngelempar kamu ke stage kata berikutnya!</p>
             </div>
             <div className="my-2 space-y-2">
               {/* Hasil Pilihan */}
-              <div className="p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg min-h-[32px] flex flex-wrap gap-1 items-center">
+              <div className="p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg min-h-[36px] flex flex-wrap gap-1.5 items-center">
                 {selectedWords.map((w, i) => (
-                  <span key={i} className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-medium">{w}</span>
+                  <span key={i} className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-medium font-mono">{w}</span>
                 ))}
-                {selectedWords.length === 0 && <span className="text-[10px] text-white/20 italic">Klik kata di bawah...</span>}
+                {selectedWords.length === 0 && <span className="text-[10px] text-white/20 italic font-mono">Tap susunan kata di bawah...</span>}
               </div>
-              {/* Pilihan Acak */}
-              <div className="flex flex-wrap gap-1">
+              {/* Opsi Kata Acak */}
+              <div className="flex flex-wrap gap-1.5">
                 {shuffledWords.map((word, index) => (
-                  <button key={index} onClick={() => handleWordClick(word, index)} className="text-[10px] bg-white/[0.03] hover:bg-white/10 border border-white/5 px-2 py-1 rounded transition-colors text-white/80">
+                  <button key={index} onClick={() => handleWordClick(word, index)} className="text-[10px] bg-white/[0.03] hover:bg-white/10 border border-white/5 px-2.5 py-1 rounded transition-colors text-white/80 font-mono">
                     {word}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-emerald-400">{puzzleWin ? "🎉 Kamu Bener Banget!" : " "}</span>
-              <button onClick={resetPuzzle} className="text-[10px] text-white/40 underline font-mono">Reset Susunan</button>
+              <span className="text-[10px] font-bold text-emerald-400 font-mono">{puzzleWin ? "🎉 STAGE COMPLETE! LOADING NEXT ERA..." : "⚡ Susun dengan benar"}</span>
+              <button onClick={() => initPuzzle(puzzleStage)} className="text-[10px] text-white/40 underline font-mono">Ulangi Stage Ini</button>
             </div>
           </Card>
 
@@ -262,19 +342,18 @@ export default function Home() {
       </Section>
 
       {/* ==========================================
-          SEKSI DASHBOARD INFORMASI (BENTO LAMA KEMBALI)
+          TELEMETRI & CORE MEMORIES (TETAP DIPERTAHANKAN)
           ========================================== */}
       <Section title="📊 Dashboard Telemetri & Log Aktivitas">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 [perspective:1000px]">
-          
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-6 sm:col-span-2 flex flex-col justify-between bg-gradient-to-br from-white/[0.03] to-transparent min-h-[180px]">
             <div className="flex justify-between items-start">
               <span className="text-pink-400 text-[10px] font-mono uppercase tracking-wider">Masa Berlayar Berdua</span>
               <span className="text-white/30 text-[10px] font-mono">SINCE 01/01/2024</span>
             </div>
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-5xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400">{daysTogether} Hari Cinta</span>
-              <span className="text-white/40 text-xs">Tiap detiknya berharga, ga mau nuker kamu sama apa pun.</span>
+              <span className="text-5xl md:text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400">{daysTogether} Hari</span>
+              <span className="text-white/40 text-xs">Ga mau nuker kamu sama apa pun di dunia ini.</span>
             </div>
           </Card>
 
@@ -290,7 +369,7 @@ export default function Home() {
                 <span className="text-xs font-medium text-white">{partnerMood}</span>
               </div>
             </div>
-            <span className="text-[9px] text-white/30 text-center block font-mono">TAP BUAT UPDATE VIBE KAMU</span>
+            <span className="text-[9px] text-white/30 text-center block font-mono">TAP BUAT ROTASI VIBE</span>
           </Card>
 
           <Card className="p-5 flex flex-col justify-between min-h-[180px]">
@@ -301,13 +380,11 @@ export default function Home() {
               <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-green-400 border border-white/5 transition-colors font-mono">🎵 Playlist</a>
               <a href="#" className="p-2 bg-white/[0.02] rounded-lg text-center text-[11px] hover:text-amber-400 border border-white/5 transition-colors font-mono">📍 Rumah</a>
             </div>
-            <span className="text-[9px] text-white/30 font-mono">SEMUA MEMORI ADA DI SINI</span>
           </Card>
-
         </div>
       </Section>
 
-      {/* REPOSITORI FOTO & AUDIO */}
+      {/* REPOSITORI VISUAL & AUDIO FOOTER RE-RENDER */}
       <Section title="📸 Our Visual Dump & Core Memories">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {[
@@ -318,7 +395,7 @@ export default function Home() {
             { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600", desc: "Liburan Singkat" },
           ].map((photo, i) => (
             <Card key={i} className="overflow-hidden bg-white/5 relative group p-1.5">
-              <div className="aspect-[4/5] overflow-hidden rounded-xl relative">
+              <div className="aspect-[4/5] overflow-hidden rounded-xl">
                 <img src={photo.url} alt={photo.desc} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
               </div>
               <div className="p-2 font-mono flex justify-between items-center text-[10px]">
@@ -354,8 +431,8 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* LOCKER MESSAGE & SYSTEM TERMINAL LOG */}
-      <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto gap-4 px-6 pb-12 [perspective:1000px]">
+      {/* FOOTER TERMINAL */}
+      <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto gap-4 px-6 pb-12">
         <Card className="p-5 bg-white/[0.02] md:col-span-1 cursor-pointer flex flex-col justify-between min-h-[160px]" onClick={() => setIsNoteDecrypted(!isNoteDecrypted)}>
           <div>
             <span className="text-[10px] uppercase tracking-widest text-pink-400 font-bold block mb-2">Pesan Rahasia Buat Kamu</span>
@@ -414,8 +491,8 @@ function Card({ children, className = "", onClick }: { children: React.ReactNode
     const rect = el.getBoundingClientRect();
     const xCoord = e.clientX - rect.left - rect.width / 2;
     const yCoord = e.clientY - rect.top - rect.height / 2;
-    rotateX.set(-(yCoord / rect.height) * 14); 
-    rotateY.set((xCoord / rect.width) * 14);
+    rotateX.set(-(yCoord / rect.height) * 12); 
+    rotateY.set((xCoord / rect.width) * 12);
     mouseX.set(e.clientX - rect.left);
     mouseY.set(e.clientY - rect.top);
   }
